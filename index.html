@@ -49,7 +49,6 @@
   .nav-label{font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-soft); padding:4px 12px; margin-bottom:6px; font-weight:700;}
   .nav-label span{text-transform:none; letter-spacing:0; font-size:10px;}
   .channel-item{display:flex; align-items:center; gap:6px;}
-  .channel-check{flex:0 0 auto; width:15px; height:15px; accent-color:var(--primary); cursor:pointer;}
 
   .modal-overlay{
     position:fixed; inset:0; background:rgba(20,24,50,0.45); display:flex;
@@ -224,7 +223,7 @@
   <aside class="sidebar">
     <div class="brand"><span class="brand-mark">✓</span> AD REVIEW</div>
 
-    <div class="nav-label">채널 선택 <span style="font-weight:400; text-transform:none;">(체크 = 행사에 포함)</span></div>
+    <div class="nav-label">채널 선택</div>
     <div class="channel-tabs" id="channelTabs"></div>
   </aside>
 
@@ -405,11 +404,11 @@ KAKAO_COPY_MAX_WIDTH_PX.sub = 190;
 const GFA_SMART_MAX_WIDTH_PX = { '메인문구 1행': 162, '메인문구 2행': 131, '서브문구 1행': 193 };
 const PX_ENABLED_CHANNELS = ['bizboard', 'gfa_smart'];
 
-/* ---------------- 행사별 채널 데이터 저장 ---------------- */
-// key -> {included:bool, fields:{"g0_f0":value,...}, image:{dataURL,base64,mediaType,width,height,kb}|null, items:[{...}]|null}
+/* ---------------- 채널별 데이터 저장 ---------------- */
+// key -> {fields:{"g0_f0":value,...}, image:{dataURL,base64,mediaType,width,height,kb}|null, items:[{...}]|null}
 const channelData = {};
 Object.keys(CHANNELS).forEach(key=>{
-  channelData[key] = {included:false, fields:{}, image:null};
+  channelData[key] = {fields:{}, image:null};
   if(CHANNELS[key].repeatable){
     channelData[key].items = [ makeBlankItem(key) ];
   }
@@ -465,13 +464,6 @@ Object.entries(CHANNELS).forEach(([key, cfg])=>{
   const item = document.createElement('div');
   item.className = 'channel-item';
 
-  const check = document.createElement('input');
-  check.type = 'checkbox';
-  check.className = 'channel-check';
-  check.title = '행사에 포함';
-  check.addEventListener('change', ()=>{ channelData[key].included = check.checked; });
-  check.addEventListener('click', (e)=>e.stopPropagation());
-
   const btn = document.createElement('button');
   btn.className = 'channel-tab' + (key===currentChannel ? ' active' : '');
   btn.style.flex = '1';
@@ -487,7 +479,6 @@ Object.entries(CHANNELS).forEach(([key, cfg])=>{
     restoreChannelState(key);
   });
 
-  item.appendChild(check);
   item.appendChild(btn);
   tabsEl.appendChild(item);
 });
