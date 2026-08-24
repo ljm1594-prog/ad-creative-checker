@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ad-material-automation
+    env: static
+    buildCommand: ""
+    staticPublishPath: ./
