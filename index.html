@@ -48,18 +48,8 @@
   .brand-mark{width:30px; height:30px; border-radius:10px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;}
   .nav-label{font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-soft); padding:4px 12px; margin-bottom:6px; font-weight:700;}
   .nav-label span{text-transform:none; letter-spacing:0; font-size:10px;}
-  .event-name-input{
-    width:100%; border:1px solid var(--border); background:#FAFBFF; border-radius:10px;
-    padding:9px 12px; font-family:'Noto Sans KR'; font-size:12.5px; color:var(--text); margin:0 0 4px;
-  }
-  .event-name-input:focus{outline:none; border-color:var(--primary);}
   .channel-item{display:flex; align-items:center; gap:6px;}
   .channel-check{flex:0 0 auto; width:15px; height:15px; accent-color:var(--primary); cursor:pointer;}
-  .copysheet-btn{
-    margin-top:18px; width:100%; background:var(--text); color:#fff; border:none; padding:11px;
-    border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer;
-  }
-  .copysheet-btn:hover{background:#000;}
 
   .modal-overlay{
     position:fixed; inset:0; background:rgba(20,24,50,0.45); display:flex;
@@ -71,11 +61,6 @@
   }
   .modal-header{display:flex; align-items:center; justify-content:space-between; font-size:15px; font-weight:800; margin-bottom:8px;}
   .modal-close{border:none; background:#F5F6FC; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:var(--text-soft);}
-  #copySheetText{
-    width:100%; height:360px; border:1px solid var(--border); border-radius:12px; padding:12px;
-    font-family:'Menlo','Consolas',monospace; font-size:12px; line-height:1.6; color:var(--text);
-    resize:vertical; background:#FAFBFF;
-  }
   .channel-tabs{display:flex; flex-direction:column; gap:5px;}
   .channel-tab{
     display:flex; align-items:center; gap:11px;
@@ -239,13 +224,8 @@
   <aside class="sidebar">
     <div class="brand"><span class="brand-mark">✓</span> AD REVIEW</div>
 
-    <div class="nav-label">행사명</div>
-    <input type="text" id="eventNameInput" class="event-name-input" placeholder="예: 8월 여름 프로모션">
-
-    <div class="nav-label" style="margin-top:16px;">채널 선택 <span style="font-weight:400; text-transform:none;">(체크 = 행사에 포함)</span></div>
+    <div class="nav-label">채널 선택 <span style="font-weight:400; text-transform:none;">(체크 = 행사에 포함)</span></div>
     <div class="channel-tabs" id="channelTabs"></div>
-
-    <button class="copysheet-btn" id="copySheetBtn">📋 복붙 시트 만들기</button>
   </aside>
 
   <main class="main">
@@ -292,17 +272,6 @@
 
     <footer>참고용 사전 필터링 도구 — 최종 승인/반려는 각 플랫폼 심사 기준을 따릅니다</footer>
   </main>
-</div>
-
-<div class="modal-overlay" id="copySheetModal" style="display:none;">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span>복붙 시트</span>
-      <button class="modal-close" id="closeCopySheet">✕</button>
-    </div>
-    <textarea id="copySheetText" readonly></textarea>
-    <button class="submit-btn" id="copyAllBtn" style="margin-top:12px;">📋 전체 복사</button>
-  </div>
 </div>
 
 <div class="modal-overlay" id="settingsModal" style="display:none;">
@@ -1284,7 +1253,6 @@ function renderResult(parsed){
   `;
 }
 
-/* ---------------- 복붙 시트 ---------------- */
 /* 엑셀에 붙여넣었을 때 줄바꿈/탭/따옴표가 있는 값은 셀 하나로 인식되도록 따옴표로 감싸기 */
 function tsvCell(value){
   value = value == null ? '' : String(value);
@@ -1293,103 +1261,6 @@ function tsvCell(value){
   }
   return value;
 }
-
-function generateCopySheet(){
-  saveCurrentChannelState();
-  const eventName = document.getElementById('eventNameInput').value.trim() || '(행사명 미입력)';
-  const includedKeys = Object.keys(CHANNELS).filter(k=>channelData[k].included);
-
-  if(includedKeys.length === 0){
-    return `[행사명: ${eventName}]\n\n체크된 채널이 없어. 사이드바에서 채널 왼쪽 체크박스를 눌러서 이 행사에 포함할 소재를 선택해줘.`;
-  }
-
-  let out = `[행사명: ${eventName}]\n생성일시: ${new Date().toLocaleString('ko-KR')}\n`;
-
-  includedKeys.forEach(key=>{
-    const cfg = CHANNELS[key];
-    const store = channelData[key];
-    out += `\n${'='.repeat(40)}\n▶ ${cfg.label}\n${'='.repeat(40)}\n`;
-
-    if(cfg.repeatable){
-      out += `\n(아래 표는 그대로 복사해서 엑셀에 붙여넣으면 셀이 자동으로 나뉨 — 탭으로 구분되어 있음)\n`;
-      store.items.forEach((item, idx)=>{
-        const 소재명 = item['g0_f0'] || '';
-        const copyLines = [];
-        cfg.groups[1].fields.forEach((f, fi)=>{
-          copyLines.push(item[`g1_f${fi}`] || '');
-        });
-        const copyBlock = copyLines.join('\n');
-        out += [tsvCell(소재명), tsvCell(copyBlock)].join('\t') + '\n';
-      });
-    }else{
-      cfg.groups.forEach((group, gi)=>{
-        if(cfg.groups.length > 1 || group.name){
-          out += `\n[${group.name}]\n`;
-        }
-        group.fields.forEach((f, fi)=>{
-          const [label] = f;
-          const val = store.fields[`g${gi}_f${fi}`] || '';
-          out += `${label}: ${val}\n`;
-        });
-      });
-    }
-
-    if(!cfg.noImageReview){
-      out += store.image ? `\n[이미지] 첨부됨 — 실제 파일은 이 시트에 포함 안 되니 별도로 업로드 필요\n` : `\n[이미지] 없음 — 별도로 준비 필요\n`;
-    }
-  });
-
-  return out;
-}
-
-/* 엑셀/구글시트 붙여넣기용 HTML 표 생성 — 일반 텍스트 붙여넣기는 스프레드시트가 줄바꿈을 무조건
-   새 행으로 쪼개버려서, 따옴표로 감싸도 소용없음. HTML 표로 만들어 같이 넣어주면
-   셀 안의 줄바꿈(<br>)을 제대로 유지한 채 붙여넣어짐. */
-function generateCopySheetHTML(){
-  const eventName = document.getElementById('eventNameInput').value.trim() || '(행사명 미입력)';
-  const includedKeys = Object.keys(CHANNELS).filter(k=>channelData[k].included);
-  if(includedKeys.length === 0) return `<div>체크된 채널이 없어.</div>`;
-
-  let html = `<div><b>[행사명: ${escapeHtml(eventName)}]</b></div>`;
-
-  includedKeys.forEach(key=>{
-    const cfg = CHANNELS[key];
-    const store = channelData[key];
-    html += `<div style="margin-top:14px;"><b>▶ ${escapeHtml(cfg.label)}</b></div>`;
-
-    if(cfg.repeatable){
-      html += `<table border="1" style="border-collapse:collapse;">`;
-      store.items.forEach(item=>{
-        const 소재명 = item['g0_f0'] || '';
-        const copyLines = [];
-        cfg.groups[1].fields.forEach((f, fi)=>{ copyLines.push(item[`g1_f${fi}`] || ''); });
-        const copyHtml = copyLines.map(l=>escapeHtml(l)).join('<br>');
-        html += `<tr><td>${escapeHtml(소재명)}</td><td>${copyHtml}</td></tr>`;
-      });
-      html += `</table>`;
-    }else{
-      cfg.groups.forEach((group, gi)=>{
-        group.fields.forEach((f, fi)=>{
-          const [label] = f;
-          const val = store.fields[`g${gi}_f${fi}`] || '';
-          html += `<div>${escapeHtml(label)}: ${escapeHtml(val)}</div>`;
-        });
-      });
-    }
-
-    if(!cfg.noImageReview){
-      html += `<div>${store.image ? '[이미지] 첨부됨 — 별도 업로드 필요' : '[이미지] 없음 — 별도로 준비 필요'}</div>`;
-    }
-  });
-
-  return html;
-}
-
-document.getElementById('copySheetBtn').addEventListener('click', ()=>{
-  const text = generateCopySheet();
-  document.getElementById('copySheetText').value = text;
-  document.getElementById('copySheetModal').style.display = 'flex';
-});
 
 document.getElementById('settingsBtn').addEventListener('click', ()=>{
   document.getElementById('apiKeyInput').value = localStorage.getItem('gemini_api_key') || '';
@@ -1413,43 +1284,6 @@ document.getElementById('saveApiKeyBtn').addEventListener('click', ()=>{
   localStorage.setItem('gemini_api_key', val);
   status.textContent = '✓ 저장됨 — 이제 검수 요청을 눌러도 돼';
 });
-document.getElementById('closeCopySheet').addEventListener('click', ()=>{
-  document.getElementById('copySheetModal').style.display = 'none';
-});
-document.getElementById('copySheetModal').addEventListener('click', (e)=>{
-  if(e.target.id === 'copySheetModal') document.getElementById('copySheetModal').style.display = 'none';
-});
-document.getElementById('copyAllBtn').addEventListener('click', async ()=>{
-  const ta = document.getElementById('copySheetText');
-  const plainText = ta.value;
-  const htmlText = generateCopySheetHTML();
-  const btn = document.getElementById('copyAllBtn');
-  const orig = btn.textContent;
-
-  try{
-    if(navigator.clipboard && window.ClipboardItem){
-      const item = new ClipboardItem({
-        'text/plain': new Blob([plainText], {type:'text/plain'}),
-        'text/html': new Blob([htmlText], {type:'text/html'})
-      });
-      await navigator.clipboard.write([item]);
-    }else{
-      await navigator.clipboard.writeText(plainText);
-    }
-    btn.textContent = '✓ 복사됨 (엑셀에 붙여넣으면 표로 들어감)';
-    setTimeout(()=>btn.textContent = orig, 1800);
-  }catch(e){
-    try{
-      await navigator.clipboard.writeText(plainText);
-      btn.textContent = '✓ 복사됨 (텍스트만)';
-      setTimeout(()=>btn.textContent = orig, 1500);
-    }catch(e2){
-      ta.select();
-      document.execCommand('copy');
-    }
-  }
-});
-
 renderForm();
 </script>
 </body></html>
