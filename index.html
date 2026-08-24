@@ -314,7 +314,7 @@ const CHANNELS = {
     spec:null, noImageReview:true
   },
   bizboard: {
-    label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', simpleCopyFormat:true,
+    label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', repeatable:true,
     groups:[
       {name:'소재 정보', fields:[['소재명', null]]},
       {name:'카피', fields:[['메인카피', null],['서브카피', null]]}
@@ -848,7 +848,7 @@ function generateBrandSearchCopyText(cfg){
   return lines.join('\n');
 }
 
-/* 한 줄, 탭 구분 형식 복사 (카카오 비즈보드: 소재명 [tab] 메인카피 [tab] 서브카피) */
+/* 한 줄, 탭 구분 형식 복사 (GFA 쇼핑소식: 소재명 [tab] 광고문구) */
 function generateSimpleCopyLine(cfg){
   const area = document.getElementById('formArea');
   const values = [];
@@ -871,6 +871,7 @@ function collectFieldsSummary(){
     const items = channelData[currentChannel].items;
     items.forEach((item, itemIdx)=>{
       lines.push(`[소재 ${itemIdx+1}]`);
+      let mainVal = '', subVal = '';
       cfg.groups.forEach((group, gi)=>{
         group.fields.forEach((f, fi)=>{
           const [label, limit] = f;
@@ -878,6 +879,10 @@ function collectFieldsSummary(){
           const val = (item[fieldKey] || '').trim();
           const unit = cfg.unit;
           const count = unit === 'byte' ? byteLen(val) : val.length;
+          if(currentChannel === 'bizboard'){
+            if(label === '메인카피') mainVal = val;
+            if(label === '서브카피') subVal = val;
+          }
           let pxNote = '';
           if(PX_ENABLED_CHANNELS.includes(currentChannel) && label !== '소재명'){
             const px = Math.round(measureTextWidthPx(val));
@@ -901,6 +906,13 @@ function collectFieldsSummary(){
           }
         });
       });
+      if(currentChannel === 'bizboard' && mainVal && subVal && mainVal === subVal){
+        overLimitIssues.push({
+          severity:'high', category:'동일 문구',
+          reason:`소재 ${itemIdx+1}: 메인카피와 서브카피가 동일한 문구로 작성됨. 카카오 비즈보드는 두 카피를 동일 문구로 작성할 수 없음.`,
+          suggestion:'서브카피를 메인카피와 다른 보조 문구로 수정.'
+        });
+      }
     });
     return {text: lines.join('\n'), overLimitIssues};
   }
@@ -936,22 +948,6 @@ function collectFieldsSummary(){
       }
     });
   });
-  if(currentChannel === 'bizboard'){
-    const inputs = area.querySelectorAll('.field-input');
-    let mainVal = '', subVal = '';
-    inputs.forEach(inp=>{
-      if(inp.dataset.label === '메인카피') mainVal = inp.value.trim();
-      if(inp.dataset.label === '서브카피') subVal = inp.value.trim();
-    });
-    if(mainVal && subVal && mainVal === subVal){
-      overLimitIssues.push({
-        severity:'high', category:'동일 문구',
-        reason:'메인카피와 서브카피가 동일한 문구로 작성됨. 카카오 비즈보드는 두 카피를 동일 문구로 작성할 수 없음.',
-        suggestion:'서브카피를 메인카피와 다른 보조 문구로 수정.'
-      });
-    }
-  }
-
   return {text: lines.join('\n'), overLimitIssues};
 }
 
