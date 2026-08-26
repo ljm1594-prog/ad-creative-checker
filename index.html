@@ -218,7 +218,9 @@
   .apply-bulk-btn:hover{background:var(--primary-dark);}
 
   .item-card{border:1px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:12px; background:#fff;}
+  .item-card.previewing{border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-soft);}
   .item-card-header{display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:800; color:var(--primary); margin-bottom:6px;}
+  .item-preview-select{cursor:pointer;}
   .item-remove-btn{border:none; background:var(--red-soft); color:var(--red); font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; cursor:pointer;}
   .item-copy-btn{border:none; background:var(--primary-soft); color:var(--primary); font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; cursor:pointer;}
   .item-add-btn{width:100%; border:1.5px dashed var(--border); background:transparent; color:var(--text-soft); font-size:12.5px; font-weight:700; padding:10px; border-radius:12px; cursor:pointer; margin-bottom:12px;}
@@ -424,6 +426,7 @@ Object.keys(CHANNELS).forEach(key=>{
   channelData[key] = {fields:{}, images:[]};
   if(CHANNELS[key].repeatable){
     channelData[key].items = [ makeBlankItem(key) ];
+    channelData[key].previewIdx = 0;
   }
 });
 
@@ -642,16 +645,19 @@ function renderRepeatableForm(area, cfg){
   addBtn.textContent = '+ 소재 추가';
   addBtn.addEventListener('click', ()=>{
     items.push(makeBlankItem(key));
+    channelData[key].previewIdx = items.length - 1;
     renderItemsList();
   });
   area.appendChild(addBtn);
 
   function renderItemsList(){
     itemsWrap.innerHTML = '';
+    const previewIdx = channelData[key].previewIdx || 0;
     items.forEach((item, itemIdx)=>{
       const card = document.createElement('div');
-      card.className = 'item-card';
-      card.innerHTML = `<div class="item-card-header"><span>소재 ${itemIdx+1}</span><span style="display:flex; gap:6px;"><button type="button" class="item-copy-btn" data-item="${itemIdx}">📋 복사</button><button type="button" class="item-remove-btn" data-item="${itemIdx}">삭제</button></span></div>`;
+      card.className = 'item-card' + (itemIdx === previewIdx ? ' previewing' : '');
+      const previewBadge = itemIdx === previewIdx ? ' 👁 미리보기 중' : '';
+      card.innerHTML = `<div class="item-card-header"><span class="item-preview-select" data-item="${itemIdx}" title="클릭하면 이 소재를 미리보기에 표시">소재 ${itemIdx+1}${previewBadge}</span><span style="display:flex; gap:6px;"><button type="button" class="item-copy-btn" data-item="${itemIdx}">📋 복사</button><button type="button" class="item-remove-btn" data-item="${itemIdx}">삭제</button></span></div>`;
 
       cfg.groups.forEach((group, gi)=>{
         group.fields.forEach((f, fi)=>{
@@ -682,11 +688,18 @@ function renderRepeatableForm(area, cfg){
         updateCount(inp);
       });
     });
+    itemsWrap.querySelectorAll('.item-preview-select').forEach(span=>{
+      span.addEventListener('click', ()=>{
+        channelData[key].previewIdx = parseInt(span.dataset.item);
+        renderItemsList();
+      });
+    });
     itemsWrap.querySelectorAll('.item-remove-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const idx = parseInt(btn.dataset.item);
         items.splice(idx, 1);
         if(items.length === 0) items.push(makeBlankItem(key));
+        if(channelData[key].previewIdx >= items.length) channelData[key].previewIdx = items.length - 1;
         renderItemsList();
       });
     });
@@ -779,8 +792,9 @@ function renderPreview(){
 
   const formArea = document.getElementById('formArea');
   const cfgForPreview = CHANNELS[currentChannel];
+  const previewIdx = cfgForPreview.repeatable ? (channelData[currentChannel].previewIdx || 0) : 0;
   const inputs = cfgForPreview.repeatable
-    ? formArea.querySelectorAll('.field-input[data-item="0"]')
+    ? formArea.querySelectorAll(`.field-input[data-item="${previewIdx}"]`)
     : formArea.querySelectorAll('.field-input');
   const firstImg = images[0];
   const imgHtml = firstImg
@@ -789,8 +803,8 @@ function renderPreview(){
 
   let linesHtml = '';
   let metaLines = [];
-  if(cfgForPreview.repeatable){
-    metaLines.push('※ 소재가 여러 개일 때는 1번 소재만 미리보기에 반영됨');
+  if(cfgForPreview.repeatable && channelData[currentChannel].items.length > 1){
+    metaLines.push(`※ 소재 ${previewIdx+1}번이 미리보기에 반영됨 (소재 이름을 클릭해 다른 소재 선택 가능)`);
   }
   if(images.length > 1){
     metaLines.push(`이미지 ${images.length}장 업로드됨 — 검수 시 장별로 각각 심사`);
