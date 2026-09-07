@@ -591,7 +591,7 @@ function renderForm(){
     copyBtn.style.marginBottom = '14px';
     copyBtn.textContent = '📋 복사';
     copyBtn.addEventListener('click', async ()=>{
-      const text = generateSimpleCopyLine(cfg);
+      const text = generateGdemandCopyText(cfg);
       const orig = copyBtn.textContent;
       try{
         await navigator.clipboard.writeText(text);
@@ -911,6 +911,34 @@ function generateSimpleCopyLine(cfg){
     });
   });
   return values.join('\t');
+}
+
+/* 구글 디맨드젠 기획표 형식 복사 (붙여넣기 파서와 정확히 대응되는 라운드트립 포맷) */
+function generateGdemandCopyText(cfg){
+  const area = document.getElementById('formArea');
+  const lines = [];
+
+  const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
+  const metaVals = metaIdx>=0 ? collectGroupValues(area, metaIdx, cfg.groups[metaIdx].fields) : [];
+  lines.push(metaVals[0] ? metaVals[0].value : '');
+  lines.push('이미지 - 단컷');
+  lines.push(`텍스트\t* ${cfg.note || ''}`);
+
+  cfg.groups.forEach((group, gi)=>{
+    if(group.name === '소재 정보') return;
+    const vals = collectGroupValues(area, gi, group.fields);
+    vals.forEach((v, i)=>{
+      const prefix = i === 0 ? group.name : '';
+      if(v.limit != null){
+        const count = cfg.unit === 'byte' ? byteLen(v.value) : v.value.length;
+        lines.push(`${prefix}\t${v.value}\t\t${count} / ${v.limit} byte`);
+      }else{
+        lines.push(`${prefix}\t${v.value}`);
+      }
+    });
+  });
+
+  return lines.join('\n');
 }
 
 function collectFieldsSummary(){
