@@ -217,10 +217,9 @@
   }
   .apply-bulk-btn:hover{background:var(--primary-dark);}
 
-  .item-card{border:1px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:12px; background:#fff;}
+  .item-card{border:1px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:12px; background:#fff; cursor:pointer;}
   .item-card.previewing{border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-soft);}
   .item-card-header{display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:800; color:var(--primary); margin-bottom:6px;}
-  .item-preview-select{cursor:pointer;}
   .item-remove-btn{border:none; background:var(--red-soft); color:var(--red); font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; cursor:pointer;}
   .item-copy-btn{border:none; background:var(--primary-soft); color:var(--primary); font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; cursor:pointer;}
   .item-add-btn{width:100%; border:1.5px dashed var(--border); background:transparent; color:var(--text-soft); font-size:12.5px; font-weight:700; padding:10px; border-radius:12px; cursor:pointer; margin-bottom:12px;}
@@ -585,6 +584,32 @@ function renderForm(){
     area.appendChild(copyBtn);
   }
 
+  if(cfg.gdemandCopyFormat){
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'apply-bulk-btn';
+    copyBtn.style.marginBottom = '14px';
+    copyBtn.textContent = '📋 복사';
+    copyBtn.addEventListener('click', async ()=>{
+      const text = generateSimpleCopyLine(cfg);
+      const orig = copyBtn.textContent;
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = '✓ 복사됨';
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyBtn.textContent = '✓ 복사됨';
+      }
+      setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
+    });
+    area.appendChild(copyBtn);
+  }
+
   if(cfg.repeatable){
     renderRepeatableForm(area, cfg);
   }else{
@@ -656,8 +681,10 @@ function renderRepeatableForm(area, cfg){
     items.forEach((item, itemIdx)=>{
       const card = document.createElement('div');
       card.className = 'item-card' + (itemIdx === previewIdx ? ' previewing' : '');
+      card.dataset.item = itemIdx;
+      card.title = '클릭하면 이 소재를 미리보기에 표시';
       const previewBadge = itemIdx === previewIdx ? ' 👁 미리보기 중' : '';
-      card.innerHTML = `<div class="item-card-header"><span class="item-preview-select" data-item="${itemIdx}" title="클릭하면 이 소재를 미리보기에 표시">소재 ${itemIdx+1}${previewBadge}</span><span style="display:flex; gap:6px;"><button type="button" class="item-copy-btn" data-item="${itemIdx}">📋 복사</button><button type="button" class="item-remove-btn" data-item="${itemIdx}">삭제</button></span></div>`;
+      card.innerHTML = `<div class="item-card-header"><span>소재 ${itemIdx+1}${previewBadge}</span><span style="display:flex; gap:6px;"><button type="button" class="item-copy-btn" data-item="${itemIdx}">📋 복사</button><button type="button" class="item-remove-btn" data-item="${itemIdx}">삭제</button></span></div>`;
 
       cfg.groups.forEach((group, gi)=>{
         group.fields.forEach((f, fi)=>{
@@ -688,9 +715,12 @@ function renderRepeatableForm(area, cfg){
         updateCount(inp);
       });
     });
-    itemsWrap.querySelectorAll('.item-preview-select').forEach(span=>{
-      span.addEventListener('click', ()=>{
-        channelData[key].previewIdx = parseInt(span.dataset.item);
+    itemsWrap.querySelectorAll('.item-card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        if(e.target.closest('input, button')) return;
+        const idx = parseInt(card.dataset.item);
+        if(channelData[key].previewIdx === idx) return;
+        channelData[key].previewIdx = idx;
         renderItemsList();
       });
     });
@@ -804,7 +834,7 @@ function renderPreview(){
   let linesHtml = '';
   let metaLines = [];
   if(cfgForPreview.repeatable && channelData[currentChannel].items.length > 1){
-    metaLines.push(`※ 소재 ${previewIdx+1}번이 미리보기에 반영됨 (소재 이름을 클릭해 다른 소재 선택 가능)`);
+    metaLines.push(`※ 소재 ${previewIdx+1}번이 미리보기에 반영됨 (소재 카드를 클릭해 다른 소재 선택 가능)`);
   }
   if(images.length > 1){
     metaLines.push(`이미지 ${images.length}장 업로드됨 — 검수 시 장별로 각각 심사`);
@@ -1060,6 +1090,25 @@ function handleFileChange(e){
   e.target.value = ''; // 같은 파일을 다시 선택할 수 있도록 초기화
 }
 
+/* ---------------- 구글 디맨드젠 기획표 형식 붙여넣기 ----------------
+   기획표를 통째로 복사하면 "그룹명 TAB 값 TAB 글자수" 형태의 여러 열이 함께 붙는데,
+   실제 필드에는 값 한 칸만 필요하므로 그룹명/글자수 칸은 걸러내고 값만 순서대로 뽑아낸다.
+   "이미지 - 단컷"처럼 텍스트 필드가 아닌 안내 행은 자리 자체를 건너뛴다. */
+const GDEMAND_SKIP_ROW_LABELS = ['텍스트'];
+const GDEMAND_GROUP_LABELS = ['소재 정보','소재명','광고 제목 (최대 5개)','설명 (최대 5개)','업체명','최종도착URL'];
+const GDEMAND_COUNT_PATTERN = /^\d*\s*\/\s*\d+\s*(byte|자|B)\s*$/i;
+function parseGdemandBulkPaste(lines){
+  const values = [];
+  lines.forEach(line=>{
+    const cells = line.split('\t').map(c=>c.trim());
+    const firstCell = cells[0] || '';
+    if(/^이미지/.test(firstCell) || GDEMAND_SKIP_ROW_LABELS.includes(firstCell)) return;
+    const valueCell = cells.find(c=> c && !GDEMAND_GROUP_LABELS.includes(c) && !GDEMAND_COUNT_PATTERN.test(c));
+    values.push(valueCell || '');
+  });
+  return values;
+}
+
 /* ---------------- 일괄 붙여넣기 (엑셀 여러 행 → 순서대로 필드 채우기) ---------------- */
 document.getElementById('formArea').addEventListener('paste', (e)=>{
   const target = e.target;
@@ -1075,11 +1124,15 @@ document.getElementById('formArea').addEventListener('paste', (e)=>{
   const startIdx = allInputs.indexOf(target);
   if(startIdx === -1) return;
 
+  const values = (currentChannel === 'gdemand' && text.includes('\t'))
+    ? parseGdemandBulkPaste(lines)
+    : lines.map(l=>l.trim());
+
   const filledRows = [];
-  lines.forEach((line, i)=>{
+  values.forEach((val, i)=>{
     const inp = allInputs[startIdx + i];
     if(!inp) return;
-    inp.value = line.trim();
+    inp.value = val;
     updateCount(inp);
     const row = inp.closest('.field-row');
     filledRows.push(row);
@@ -1164,9 +1217,11 @@ const SYSTEM_PROMPT = `
 - 메인카피/서브카피가 동일 문구면 반려 (이건 별도로 정확히 계산되어 issues로 전달되니 너는 재확인만)
 - 카피 또는 오브젝트 이미지 중 어느 쪽에도 광고주체(브랜드명)가 표기되어 있지 않으면 지적
 - 텍스트와 오브젝트 이미지가 겹쳐 보이면 지적
+- ★(별표) 기호는 메인카피/서브카피에 사용 허용 — 반려 사유로 삼지 마
 
 [Naver GFA 공통]
 - 카운트다운/한정 시간 문구("60분 뒤 사라져요" 류)는 기준 시점이 불명확하면 반려. 절대 시각 표기 또는 근거자료 있는 경우만 허용
+- 🔴 "평"(평수) 단위 표기 사용 시 반려 (예: "1평 원룸", "10평대 아파트" 등). ㎡(제곱미터) 등 다른 단위 표기는 문제 없음
 
 [GFA 피드] 이미지에 별도로 합성/삽입된 브랜드 로고나 워터마크가 보이면 반려. 단, 제품 본체에 원래 인쇄·각인되어 있는 로고(예: 제품 표면의 브랜드명)는 제품의 일부이므로 문제 없음 — 이건 지적하지 마
 [GFA 스마트채널] 투명배경/누끼 여부는 이미 코드가 정확히 측정해서 별도로 issues에 추가하니 너는 절대 언급하지 마. 메인문구 1행/2행, 서브문구 1행 작성 시 여러 배너 크기(750×280/750×200/750×160)에서 동시 노출되므로 가장 작은 배너에서도 잘리지 않는지, 첫 줄/마지막 줄이 가려지지 않는지 확인
