@@ -602,6 +602,33 @@ function findInsertionPointAtTop(colBValues){
 const SHEET_GAP_ROWS = 2; // 항목 사이에 띄우는 빈 줄 수 (appendRowsToSheetTabByGid와 공유)
 
 /* 카카오 비즈보드 전용 — 실제 시트처럼 [제목행: 행사명+구좌 2열 병합] [행사명 열 전체 병합] [구좌 열 전체 병합] */
+/* 브랜드검색 전용 — 구분용 빈 줄은 항상 흰색으로, 글자수 칸(D열/H열)은 정수 서식+우측 정렬로 통일 */
+function buildBrandSearchFormatRequests(sheetId, insertRow0, rows){
+  const dataStart0 = insertRow0 + 2; // 1번째=소재명 행, 2번째=PC/MO 행, 나머지가 데이터 행
+  const dataEnd0 = insertRow0 + rows.length;
+  const WHITE = { red: 1, green: 1, blue: 1 };
+  const countFormat = { numberFormat:{ type:'NUMBER', pattern:'0' }, horizontalAlignment:'RIGHT' };
+  const countFields = 'userEnteredFormat.numberFormat,userEnteredFormat.horizontalAlignment';
+
+  return [
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: dataEnd0, endRowIndex: dataEnd0 + SHEET_GAP_ROWS, startColumnIndex: 1, endColumnIndex: 8 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+        fields:'userEnteredFormat.backgroundColor'
+    }},
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 3, endColumnIndex: 4 },
+        cell:{ userEnteredFormat: countFormat },
+        fields: countFields
+    }},
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 7, endColumnIndex: 8 },
+        cell:{ userEnteredFormat: countFormat },
+        fields: countFields
+    }}
+  ];
+}
+
 function buildBizboardMergeRequests(sheetId, insertRow0, rows){
   const itemCount = rows.length - 2; // 1번째=제목행, 2번째=열 제목행, 나머지가 소재별 데이터 행
   const dataStart0 = insertRow0 + 2;
@@ -922,7 +949,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`, buildBrandSearchFormatRequests);
     area.appendChild(exportBtn);
   }
 
