@@ -302,6 +302,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ---------------- 채널 정의 ---------------- */
 const CHANNELS = {
@@ -384,6 +385,14 @@ function byteLen(str){
   let n = 0;
   for(const ch of str){ n += ch.codePointAt(0) > 127 ? 2 : 1; }
   return n;
+}
+
+/* ---------------- 엑셀(.xlsx) 파일로 바로 내보내기 (클립보드 복사 없이 다운로드 즉시 엑셀에서 열림) ---------------- */
+function exportRowsAsXlsx(rows, filename){
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, filename);
 }
 
 /* 카카오 비즈보드 카피 실제 렌더링 픽셀폭 측정 (등록화면 CSS 기준: 14px Noto Sans KR 계열) */
@@ -556,6 +565,17 @@ function renderForm(){
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
     area.appendChild(copyBtn);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'apply-bulk-btn';
+    exportBtn.style.marginBottom = '14px';
+    exportBtn.style.background = 'var(--mint)';
+    exportBtn.textContent = '📊 엑셀로 내보내기';
+    exportBtn.addEventListener('click', ()=>{
+      exportRowsAsXlsx(generateBrandSearchRows(cfg), `${cfg.label} 소재.xlsx`);
+    });
+    area.appendChild(exportBtn);
   }
 
   if(cfg.simpleCopyFormat){
@@ -582,6 +602,17 @@ function renderForm(){
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
     area.appendChild(copyBtn);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'apply-bulk-btn';
+    exportBtn.style.marginBottom = '14px';
+    exportBtn.style.background = 'var(--mint)';
+    exportBtn.textContent = '📊 엑셀로 내보내기';
+    exportBtn.addEventListener('click', ()=>{
+      exportRowsAsXlsx(generateSimpleCopyRows(cfg), `${cfg.label} 소재.xlsx`);
+    });
+    area.appendChild(exportBtn);
   }
 
   if(cfg.gdemandCopyFormat){
@@ -608,6 +639,17 @@ function renderForm(){
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
     area.appendChild(copyBtn);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'apply-bulk-btn';
+    exportBtn.style.marginBottom = '14px';
+    exportBtn.style.background = 'var(--mint)';
+    exportBtn.textContent = '📊 엑셀로 내보내기';
+    exportBtn.addEventListener('click', ()=>{
+      exportRowsAsXlsx(generateGdemandRows(cfg), `${cfg.label} 소재.xlsx`);
+    });
+    area.appendChild(exportBtn);
   }
 
   if(cfg.repeatable){
@@ -659,6 +701,17 @@ function renderForm(){
 function renderRepeatableForm(area, cfg){
   const key = currentChannel;
   const items = channelData[key].items;
+
+  const exportAllBtn = document.createElement('button');
+  exportAllBtn.type = 'button';
+  exportAllBtn.className = 'apply-bulk-btn';
+  exportAllBtn.style.marginBottom = '10px';
+  exportAllBtn.style.background = 'var(--mint)';
+  exportAllBtn.textContent = '📊 전체 소재 엑셀로 내보내기';
+  exportAllBtn.addEventListener('click', ()=>{
+    exportRowsAsXlsx(generateRepeatableRows(cfg, items), `${cfg.label} 소재.xlsx`);
+  });
+  area.appendChild(exportAllBtn);
 
   const itemsWrap = document.createElement('div');
   itemsWrap.id = 'itemsWrap';
@@ -759,6 +812,18 @@ function renderRepeatableForm(area, cfg){
     });
   }
   renderItemsList();
+}
+
+function generateRepeatableRows(cfg, items){
+  const copyFields = cfg.groups[1].fields;
+  const header = ['소재명', ...copyFields.map(f=>f[0])];
+  const rows = [header];
+  items.forEach(item=>{
+    const 소재명 = item['g0_f0'] || '';
+    const vals = copyFields.map((f, fi)=> item[`g1_f${fi}`] || '');
+    rows.push([소재명, ...vals]);
+  });
+  return rows;
 }
 
 function getMaxWidthPx(label){
@@ -870,7 +935,7 @@ function collectGroupValues(area, gi, fields){
   });
 }
 
-function generateBrandSearchCopyText(cfg){
+function generateBrandSearchRows(cfg){
   const area = document.getElementById('formArea');
   const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
   const pcIdx = cfg.groups.findIndex(g=>g.name === 'PC');
@@ -879,11 +944,11 @@ function generateBrandSearchCopyText(cfg){
   const pc = pcIdx>=0 ? collectGroupValues(area, pcIdx, cfg.groups[pcIdx].fields) : [];
   const mo = moIdx>=0 ? collectGroupValues(area, moIdx, cfg.groups[moIdx].fields) : [];
 
-  const lines = [];
+  const rows = [];
   const materialName = meta[0] ? meta[0].value : '';
   const bgColor = meta[1] ? meta[1].value : '';
-  lines.push(`${materialName}\t${bgColor}`);
-  lines.push(`PC\t\t\t\tMO`);
+  rows.push([materialName, bgColor]);
+  rows.push(['PC','','','','MO']);
 
   const maxLen = Math.max(pc.length, mo.length);
   for(let i=0; i<maxLen; i++){
@@ -894,14 +959,18 @@ function generateBrandSearchCopyText(cfg){
     const mLabel = m ? `${m.label}${m.limit!=null ? ` (${m.limit})` : ''}` : '';
     const mVal = m ? m.value : '';
     const mCount = m ? (cfg.unit==='byte' ? byteLen(m.value) : m.value.length) : '';
-    lines.push(`${pLabel}\t${pVal}\t${pCount}\t\t${mLabel}\t${mVal}\t${mCount}`);
+    rows.push([pLabel, pVal, pCount, '', mLabel, mVal, mCount]);
   }
 
-  return lines.join('\n');
+  return rows;
+}
+
+function generateBrandSearchCopyText(cfg){
+  return generateBrandSearchRows(cfg).map(r=>r.join('\t')).join('\n');
 }
 
 /* 한 줄, 탭 구분 형식 복사 (GFA 쇼핑소식: 소재명 [tab] 광고문구) */
-function generateSimpleCopyLine(cfg){
+function generateSimpleCopyRows(cfg){
   const area = document.getElementById('formArea');
   const values = [];
   cfg.groups.forEach((group, gi)=>{
@@ -910,19 +979,23 @@ function generateSimpleCopyLine(cfg){
       values.push(inp ? inp.value.trim() : '');
     });
   });
-  return values.join('\t');
+  return [values];
+}
+
+function generateSimpleCopyLine(cfg){
+  return generateSimpleCopyRows(cfg)[0].join('\t');
 }
 
 /* 구글 디맨드젠 기획표 형식 복사 (붙여넣기 파서와 정확히 대응되는 라운드트립 포맷) */
-function generateGdemandCopyText(cfg){
+function generateGdemandRows(cfg){
   const area = document.getElementById('formArea');
-  const lines = [];
+  const rows = [];
 
   const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
   const metaVals = metaIdx>=0 ? collectGroupValues(area, metaIdx, cfg.groups[metaIdx].fields) : [];
-  lines.push(metaVals[0] ? metaVals[0].value : '');
-  lines.push('이미지 - 단컷');
-  lines.push(`텍스트\t* ${cfg.note || ''}`);
+  rows.push([metaVals[0] ? metaVals[0].value : '']);
+  rows.push(['이미지 - 단컷']);
+  rows.push(['텍스트', `* ${cfg.note || ''}`]);
 
   cfg.groups.forEach((group, gi)=>{
     if(group.name === '소재 정보') return;
@@ -931,14 +1004,18 @@ function generateGdemandCopyText(cfg){
       const prefix = i === 0 ? group.name : '';
       if(v.limit != null){
         const count = cfg.unit === 'byte' ? byteLen(v.value) : v.value.length;
-        lines.push(`${prefix}\t${v.value}\t\t${count} / ${v.limit} byte`);
+        rows.push([prefix, v.value, '', `${count} / ${v.limit} byte`]);
       }else{
-        lines.push(`${prefix}\t${v.value}`);
+        rows.push([prefix, v.value]);
       }
     });
   });
 
-  return lines.join('\n');
+  return rows;
+}
+
+function generateGdemandCopyText(cfg){
+  return generateGdemandRows(cfg).map(r=>r.join('\t')).join('\n');
 }
 
 function collectFieldsSummary(){
