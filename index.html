@@ -1174,32 +1174,72 @@ function generateRepeatableAppendRows(cfg, items){
   });
 }
 
-/* GFA 피드/스마트채널/쇼핑소식이 함께 들어가는 통합 탭 전용 — [행사명, 구좌, 파일명(=소재명), 광고문구] 4열.
-   구좌 값(피드/스마트채널/쇼핑소식)만 다르고 나머지 구조는 동일해서 하나의 함수로 공유함 */
+/* GFA 피드/스마트채널/쇼핑소식이 함께 들어가는 통합 탭 전용 — [제목행: 행사명] → [헤더행: 행사명/구좌/파일명/광고문구]
+   → 소재별 데이터 행, 총 4열(B~E). 구좌 값(피드/스마트채널/쇼핑소식)만 다르고 나머지 구조는 동일해서 공유함 */
+const GFA_HEADER_ROW = ['행사명', '구좌', '파일명', '광고문구'];
+
 function generateGfaAppendRows(cfg, items, placementLabel){
   const eventName = gfaCombinedEventName.trim();
-  return items.map(item=>{
+  const rows = [ [eventName], GFA_HEADER_ROW.slice() ];
+  items.forEach(item=>{
     const 소재명 = getFieldValueByLabel(cfg, item, 0, '소재명');
     const copyBlock = cfg.groups[1].fields.map((f, fi)=> item[`g1_f${fi}`] || '').join('\n');
-    return [eventName, placementLabel, 소재명, copyBlock];
+    rows.push([eventName, placementLabel, 소재명, copyBlock]);
   });
+  return rows;
 }
 
 /* GFA 피드는 반복 입력이 아니라 소재 하나뿐이라 "파일명"에 실제 소재명 대신 항상 "소재 전체"를 씀 */
 function generateGfaFeedAppendRows(){
   const eventName = gfaCombinedEventName.trim();
   const adCopy = (channelData.gfa_feed.fields.adCopy || '').trim();
-  return [[eventName, '피드', '소재 전체', adCopy]];
+  return [ [eventName], GFA_HEADER_ROW.slice(), [eventName, '피드', '소재 전체', adCopy] ];
 }
 
-/* GFA 스마트채널/쇼핑소식 내보내기 — 행사명(B열)과 구좌(C열)를 소재 개수만큼 병합 */
+/* GFA 내보내기 서식 — 제목행은 흰 배경, 헤더행(행사명/구좌/파일명/광고문구)은 남색+흰 굵은 글씨,
+   데이터 행은 흰 배경, 행사명/구좌 열은 소재 개수만큼 병합, 표 전체에 격자 테두리 */
 function buildGfaMergeRequests(sheetId, insertRow0, rows){
-  if(rows.length <= 1) return [];
-  const endRow0 = insertRow0 + rows.length;
-  return [
-    { mergeCells:{ range:{ sheetId, startRowIndex: insertRow0, endRowIndex: endRow0, startColumnIndex: 1, endColumnIndex: 2 }, mergeType:'MERGE_ALL' } },
-    { mergeCells:{ range:{ sheetId, startRowIndex: insertRow0, endRowIndex: endRow0, startColumnIndex: 2, endColumnIndex: 3 }, mergeType:'MERGE_ALL' } }
+  const dataRowCount = rows.length - 2; // 1번째=제목행, 2번째=헤더행
+  const dataStart0 = insertRow0 + 2;
+  const dataEnd0 = dataStart0 + Math.max(dataRowCount, 0);
+  const WHITE = { red:1, green:1, blue:1 };
+  const NAVY = { red:0x1B/255, green:0x1F/255, blue:0x3B/255 };
+  const BORDER = { style:'SOLID', width:1, color:{ red:0, green:0, blue:0 } };
+  const startCol0 = 1, endCol0 = 5; // B~E
+
+  const requests = [
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+        fields:'userEnteredFormat.backgroundColor'
+    }},
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0 + 1, endRowIndex: insertRow0 + 2, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+        cell:{ userEnteredFormat:{ backgroundColor: NAVY, textFormat:{ bold:true, foregroundColor: WHITE }, horizontalAlignment:'CENTER' } },
+        fields:'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'
+    }}
   ];
+  if(dataRowCount > 0){
+    requests.push({ repeatCell:{
+        range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+        fields:'userEnteredFormat.backgroundColor'
+    }});
+  }
+  requests.push({ repeatCell:{
+      range:{ sheetId, startRowIndex: dataEnd0, endRowIndex: dataEnd0 + SHEET_GAP_ROWS, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+      cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+      fields:'userEnteredFormat.backgroundColor'
+  }});
+  requests.push({ updateBorders:{
+      range:{ sheetId, startRowIndex: insertRow0, endRowIndex: dataEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+      top: BORDER, bottom: BORDER, left: BORDER, right: BORDER, innerHorizontal: BORDER, innerVertical: BORDER
+  }});
+  if(dataRowCount > 1){
+    requests.push({ mergeCells:{ range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 1, endColumnIndex: 2 }, mergeType:'MERGE_ALL' } });
+    requests.push({ mergeCells:{ range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 2, endColumnIndex: 3 }, mergeType:'MERGE_ALL' } });
+  }
+  return requests;
 }
 
 /* ==================== GFA 통합 화면 (피드+스마트채널+쇼핑소식을 한 화면에서 입력/검수/내보내기) ====================
@@ -1551,6 +1591,9 @@ async function runGfaSectionReview(key, label, btn){
 }
 
 /* 피드 → 스마트채널 → 쇼핑소식 순서로 각각 내보내고, 마지막에만 시트 탭을 새 창으로 열어줌 */
+/* 세 블록(피드/스마트채널/쇼핑소식)을 한 번의 삽입으로 합쳐서 넣음 — 따로따로 3번 호출하면, 각 블록에도
+   "행사명" 헤더가 있어서 두 번째/세 번째 삽입이 "탭에서 제일 위의 행사명"을 찾다가 방금 넣은 이전
+   블록의 헤더를 잘못 찾아 그 블록 한가운데 끼어드는 문제가 있었음. 한 번에 합쳐 넣으면 그 문제가 없음 */
 async function runGfaCombinedExport(btn){
   const orig = btn.textContent;
   btn.disabled = true;
@@ -1567,13 +1610,28 @@ async function runGfaCombinedExport(btn){
     }
 
     const feedRows = generateGfaFeedAppendRows();
-    await appendRowsToSheetTabByGid(spreadsheetId, gid, feedRows, null, null, headerMarker, gapRows, false);
-
     const smartRows = generateGfaAppendRows(CHANNELS.gfa_smart, channelData.gfa_smart.items, '스마트채널');
-    await appendRowsToSheetTabByGid(spreadsheetId, gid, smartRows, buildGfaMergeRequests, null, headerMarker, gapRows, false);
-
     const shoppingRows = generateGfaAppendRows(CHANNELS.gfa_shopping, channelData.gfa_shopping.items, '쇼핑소식');
-    await appendRowsToSheetTabByGid(spreadsheetId, gid, shoppingRows, buildGfaMergeRequests, null, headerMarker, gapRows, true);
+    const spacer = () => Array.from({ length: gapRows }, () => []);
+
+    const combinedRows = [
+      ...feedRows, ...spacer(),
+      ...smartRows, ...spacer(),
+      ...shoppingRows
+    ];
+
+    const buildCombinedRequests = (sheetId, insertRow0) => {
+      let offset = 0;
+      const requests = [];
+      requests.push(...buildGfaMergeRequests(sheetId, insertRow0 + offset, feedRows));
+      offset += feedRows.length + gapRows;
+      requests.push(...buildGfaMergeRequests(sheetId, insertRow0 + offset, smartRows));
+      offset += smartRows.length + gapRows;
+      requests.push(...buildGfaMergeRequests(sheetId, insertRow0 + offset, shoppingRows));
+      return requests;
+    };
+
+    await appendRowsToSheetTabByGid(spreadsheetId, gid, combinedRows, buildCombinedRequests, null, headerMarker, gapRows, true);
   }catch(e){
     alert(e.message || '구글 시트 내보내기 실패');
   }finally{
