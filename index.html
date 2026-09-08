@@ -506,7 +506,44 @@ async function exportRowsToGoogleSheet(rows, title){
   window.open(sheet.spreadsheetUrl, '_blank');
 }
 
-/* 채널별로 지정된 gid 탭 끝에, 그 채널의 기존 복사 포맷과 동일한 행을 그대로 이어붙임 */
+function indexToColLetter(idx0){
+  let n = idx0 + 1, s = '';
+  while(n > 0){ const rem = (n - 1) % 26; s = String.fromCharCode(65 + rem) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+
+/* B열 값만 전체 조회 — 어디까지 데이터가 차 있는지 파악하는 용도 (트레일링 빈 행은 API가 알아서 잘라줌) */
+async function getColumnBValues(token, spreadsheetId, sheetTitle){
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!B:B`,
+    { headers:{'Authorization':'Bearer ' + token} }
+  );
+  if(!res.ok) throw new Error('B열 데이터 조회 실패: ' + (await res.text()));
+  const json = await res.json();
+  return (json.values || []).map(r => (r[0] || '').toString());
+}
+
+/* 셀 배경색/테두리 등 서식만 복사(값은 안 건드림) — 소스가 대상보다 작으면 반복 타일링됨 */
+async function copyCellFormat(token, spreadsheetId, sheetId, source, destination){
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+    method:'POST',
+    headers:{'Authorization':'Bearer ' + token, 'Content-Type':'application/json'},
+    body: JSON.stringify({
+      requests:[{
+        copyPaste:{
+          source:{ sheetId, ...source },
+          destination:{ sheetId, ...destination },
+          pasteType:'PASTE_FORMAT'
+        }
+      }]
+    })
+  });
+  if(!res.ok) throw new Error('서식 복사 실패: ' + (await res.text()));
+}
+
+/* 채널별로 지정된 gid 탭 끝에, 그 채널의 기존 복사 포맷과 동일한 행을 값+서식(배경색·테두리) 모두 그대로 이어붙임.
+   서식은 "새 블록 바로 위, 같은 행 수만큼"을 템플릿으로 그대로 복사해오는 방식 — 별도 서식 값을 하드코딩하지 않고
+   그 탭에 이미 존재하는 스타일을 그대로 재사용함. */
 async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows){
   const token = await getGoogleAccessToken();
 
@@ -518,18 +555,45 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows){
   const props = (metaJson.sheets || []).map(s=>s.properties).find(p=> String(p.sheetId) === String(gid));
   if(!props) throw new Error(`gid=${gid}에 해당하는 탭을 찾을 수 없어. 설정에서 gid를 다시 확인해줘.`);
   const sheetTitle = props.title;
+  const sheetId = props.sheetId;
 
-  const rowsWithSpacer = [...rows, []]; // 다음에 이어붙일 소재와 구분되도록 빈 줄 하나 추가
+  const GAP_ROWS = 2; // 이전 항목과 새 항목 사이에 띄울 빈 줄 수 (기존 시트 관례와 동일)
+  const colB = await getColumnBValues(token, spreadsheetId, sheetTitle);
+  const lastContentRow0 = colB.length - 1; // 0-based, 마지막으로 값이 있는 행
+  const newStartRow0 = lastContentRow0 + 1 + GAP_ROWS;
 
-  const appendRes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!B1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+  const startCol0 = 1; // B열부터 (A열은 항상 빈 여백 칸)
+  const maxCols = Math.max(1, ...rows.map(r => r.length));
+  const endCol0 = startCol0 + maxCols;
+
+  const startColLetter = indexToColLetter(startCol0);
+  const endColLetter = indexToColLetter(endCol0 - 1);
+  const targetRange = `${encodeURIComponent(sheetTitle)}!${startColLetter}${newStartRow0 + 1}:${endColLetter}${newStartRow0 + rows.length}`;
+
+  const updateRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${targetRange}?valueInputOption=USER_ENTERED`,
     {
-      method:'POST',
+      method:'PUT',
       headers:{'Authorization':'Bearer ' + token, 'Content-Type':'application/json'},
-      body: JSON.stringify({ values: rowsWithSpacer })
+      body: JSON.stringify({ values: rows })
     }
   );
-  if(!appendRes.ok) throw new Error('시트에 행 추가 실패: ' + (await appendRes.text()));
+  if(!updateRes.ok) throw new Error('시트에 값 쓰기 실패: ' + (await updateRes.text()));
+
+  // 서식 복사는 "참고할 이전 블록"이 있을 때만 시도 — 없으면(맨 첫 항목이면) 조용히 건너뜀.
+  // 실패해도 값은 이미 반영됐으니 여기서 던지지 않고 콘솔에만 남김.
+  try{
+    const sourceEnd0 = newStartRow0 - GAP_ROWS;
+    const sourceStart0 = sourceEnd0 - rows.length;
+    if(sourceStart0 >= 0){
+      await copyCellFormat(token, spreadsheetId, sheetId,
+        { startRowIndex: sourceStart0, endRowIndex: sourceEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+        { startRowIndex: newStartRow0, endRowIndex: newStartRow0 + rows.length, startColumnIndex: startCol0, endColumnIndex: endCol0 }
+      );
+    }
+  }catch(e){
+    console.error('서식 복사 실패(값은 정상적으로 들어감):', e);
+  }
 
   window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}`, '_blank');
 }
