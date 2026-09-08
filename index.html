@@ -2159,7 +2159,10 @@ document.getElementById('formArea').addEventListener('paste', (e)=>{
     const inp = allInputs[startIdx + i];
     if(!inp) return;
     inp.value = val;
-    updateCount(inp);
+    // .value를 코드로 바꾸는 건 진짜 input 이벤트를 안 일으켜서, 그 필드에 붙어있는 저장 로직
+    // (예: GFA 통합 화면의 소재별 items 배열 저장)이 안 불려짐 — 실제 이벤트를 발생시켜서
+    // 어떤 화면이든 자기 필드에 달아둔 리스너가 정상적으로 반응하게 함
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
     const row = inp.closest('.field-row');
     filledRows.push(row);
     row.classList.add('bulk-filled');
