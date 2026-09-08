@@ -623,7 +623,17 @@ function findInsertionPoint(colBValues, marker){
   return findInsertionPointAtTop(colBValues);
 }
 
-const SHEET_GAP_ROWS = 2; // 항목 사이에 띄우는 빈 줄 수 (appendRowsToSheetTabByGid와 공유)
+const SHEET_GAP_ROWS = 2; // 항목 사이에 띄우는 기본 빈 줄 수
+const SHEET_GAP_ROWS_OVERRIDE = { meta: 0 }; // 채널별로 다르게 띄우고 싶으면 여기서 재정의
+
+function getSheetGapRowsForChannel(channelKey){
+  for(const [fieldKey, channels] of Object.entries(SHEET_GID_FIELD_MAP)){
+    if(channels.includes(channelKey)){
+      return fieldKey in SHEET_GAP_ROWS_OVERRIDE ? SHEET_GAP_ROWS_OVERRIDE[fieldKey] : SHEET_GAP_ROWS;
+    }
+  }
+  return SHEET_GAP_ROWS;
+}
 
 /* 브랜드검색 전용 — 글자수 칸(D열/H열)을 고정 숫자가 아니라 실제 값 칸을 참조하는 =LEN() 수식으로 채움.
    시트에 실제로 들어갈 행 번호(insertRow0)를 알아야 셀 주소를 만들 수 있어서, 값이 정해진 rows 배열이
@@ -720,7 +730,8 @@ function buildBizboardMergeRequests(sheetId, insertRow0, rows){
    그대로 복사해오는 방식 — 별도 색상값을 하드코딩하지 않고 그 탭에 이미 있는 스타일을 재사용함.
    buildMergeRequests(sheetId, insertRow0, rows)가 주어지면(카카오 비즈보드처럼 병합 셀이 필요한 경우)
    서식 복사 다음 단계로 그 병합도 적용함. */
-async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker){
+async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows){
+  if(gapRows == null) gapRows = SHEET_GAP_ROWS;
   const token = await getGoogleAccessToken();
 
   const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, {
@@ -742,7 +753,7 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   const startCol0 = 1; // B열부터 (A열은 항상 빈 여백 칸)
   const maxCols = Math.max(1, ...rows.map(r => r.length));
   const endCol0 = startCol0 + maxCols;
-  const totalInsertCount = rows.length + SHEET_GAP_ROWS;
+  const totalInsertCount = rows.length + gapRows;
 
   // 1) 새 데이터 + 구분용 빈 줄만큼 빈 행을 삽입 → 기존 내용 전체가 그만큼 아래로 밀림
   await insertBlankRows(token, spreadsheetId, sheetId, insertRow0, totalInsertCount);
@@ -804,9 +815,10 @@ function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, trans
       const rows = getRows();
       const gid = getSheetGidForChannel(currentChannel);
       const headerMarker = getSheetHeaderMarkerForChannel(currentChannel);
+      const gapRows = getSheetGapRowsForChannel(currentChannel);
       const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
       if(gid && spreadsheetId){
-        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker);
+        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows);
       }else{
         await exportRowsToGoogleSheet(rows, title);
       }
