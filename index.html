@@ -609,16 +609,21 @@ function buildBizboardMergeRequests(sheetId, insertRow0, rows){
   const WHITE = { red: 1, green: 1, blue: 1 };
   const TITLE_PEACH = { red: 0xfc/255, green: 0xe5/255, blue: 0xcd/255 }; // #fce5cd
 
-  // 제목행(행사명+구좌 병합)은 살구색, 데이터 행(소재명~워싱 전체, B~H열)과 그 아래 구분용 빈 줄은
-  // 항상 흰색으로 명시 고정 — 행 삽입 시 시트의 줄무늬(배경색 교대) 서식이 자동으로 새 행에도 적용돼서
-  // 빈 줄까지 살구색으로 보이는 문제가 있어, 개별 칸이 아니라 범위 전체를 지정해 덮어씀
+  // 제목행은 B열(행사명 텍스트)만 살구색, C열~H열은 흰색 — 병합은 하지 않음(텍스트가 길면 옆 빈 칸으로
+  // 자연스럽게 흘러넘쳐 보이는 것뿐, 실제 셀 병합은 아님). 데이터 행(소재명~워싱 전체, B~H열)과 그 아래
+  // 구분용 빈 줄은 항상 흰색으로 명시 고정 — 행 삽입 시 시트의 줄무늬(배경색 교대) 서식이 자동으로 새
+  // 행에도 적용돼서 안 칠한 칸까지 살구색으로 보이는 문제가 있어, 개별 칸이 아니라 범위 전체를 지정해 덮어씀
   const requests = [
     { repeatCell:{
-        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 3 },
-        cell:{ userEnteredFormat:{ backgroundColor: TITLE_PEACH } },
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 8 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
         fields:'userEnteredFormat.backgroundColor'
     }},
-    { mergeCells:{ range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 3 }, mergeType:'MERGE_ALL' } }
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 2 },
+        cell:{ userEnteredFormat:{ backgroundColor: TITLE_PEACH } },
+        fields:'userEnteredFormat.backgroundColor'
+    }}
   ];
   if(itemCount > 0){
     requests.push({ repeatCell:{
