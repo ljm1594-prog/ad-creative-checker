@@ -344,6 +344,15 @@ const CHANNELS = {
     ],
     spec:null, noImageReview:true
   },
+  meta: {
+    label:'메타', unit:'char', dotColor:'#0668E1', dotText:'M', simpleCopyFormat:true, noImageReview:true,
+    groups:[
+      {name:'소재 정보', fields:[['행사명', null]]},
+      {name:'카피', fields:[['제목', null], ['텍스트', null, {multiline:true}]]},
+      {name:'파일 위치', fields:[['폴더 경로', null]]}
+    ],
+    spec:null
+  },
   bizboard: {
     label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', repeatable:true, hasEventName:true,
     dashboardUrl:'https://moment.kakao.com/dashboard/362302', dashboardLabel:'카카오모먼트 광고관리자 열기',
@@ -398,15 +407,6 @@ const CHANNELS = {
     spec:{sizes:[[960,1200],[1200,1200],[1200,628]], minKB:0, maxKB:5120},
     specHint:'이미지 규격: 960×1200 / 1200×1200 / 1200×628px 중 하나 · 용량 최대 5MB',
     note:'짧은/긴 광고 제목에 느낌표·기호·구두점 사용 불가, 영어 대문자 연속 사용 불가'
-  },
-  meta: {
-    label:'메타', unit:'char', dotColor:'#0668E1', dotText:'M', simpleCopyFormat:true, noImageReview:true,
-    groups:[
-      {name:'소재 정보', fields:[['행사명', null]]},
-      {name:'카피', fields:[['제목', null], ['텍스트', null, {multiline:true}]]},
-      {name:'파일 위치', fields:[['폴더 경로', null]]}
-    ],
-    spec:null
   }
 };
 
