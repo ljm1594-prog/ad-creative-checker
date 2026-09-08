@@ -841,8 +841,17 @@ const KAKAO_COPY_FONT = "14px 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Got
 const KAKAO_COPY_MAX_WIDTH_PX = { main: null, sub: null };
 
 function measureTextWidthPx(text, font){
-  _measureCtx.font = font || KAKAO_COPY_FONT;
-  return _measureCtx.measureText(text).width;
+  // 일부 브라우저(개인정보 보호 확장 프로그램이 캔버스를 차단하는 경우 등)에서는 캔버스 측정이
+  // 실패하거나 컨텍스트 자체를 못 가져올 수 있음 — 여기서 던지면 이 값을 쓰는 렌더링 루프가
+  // 통째로 멈춰서(다음 입력칸에 이벤트 리스너가 아예 안 붙는 등) 훨씬 큰 문제로 번지니,
+  // 실패하면 글자당 평균 폭으로 대충 추정해서라도 항상 숫자를 반환함
+  try{
+    if(!_measureCtx) throw new Error('no 2d context');
+    _measureCtx.font = font || KAKAO_COPY_FONT;
+    return _measureCtx.measureText(text).width;
+  }catch(e){
+    return (text || '').length * 8;
+  }
 }
 // 안전마진: "가" 반복 캘리브레이션은 순수 한글 기준이라, 영문 대문자/공백이 섞인 실제 문구는
 // 같은 글자수라도 폭이 더 넓게 나올 수 있음.
@@ -1293,12 +1302,14 @@ function renderGfaItemsSection(area, key, cfg){
     });
 
     wrap.querySelectorAll('.field-input').forEach(inp=>{
-      updateGfaItemCount(inp);
+      // count 표시 갱신(updateGfaItemCount)이 무슨 이유로든 실패해도, 그 아래 input 리스너는
+      // 반드시 붙어야 함 — 안 그러면 그 다음 필드들은 타이핑해도 저장이 안 되는 훨씬 큰 문제가 생김
+      try{ updateGfaItemCount(inp); }catch(e){ console.error('updateGfaItemCount 실패:', e); }
       inp.addEventListener('input', ()=>{
         const itemIdx = parseInt(inp.dataset.item);
         const fieldKey = `g${inp.dataset.group}_f${inp.dataset.idx}`;
         items[itemIdx][fieldKey] = inp.value;
-        updateGfaItemCount(inp);
+        try{ updateGfaItemCount(inp); }catch(e){ console.error('updateGfaItemCount 실패:', e); }
       });
     });
     wrap.querySelectorAll('.item-remove-btn').forEach(btn=>{
