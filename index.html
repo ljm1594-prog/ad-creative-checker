@@ -1323,7 +1323,7 @@ function updateGfaItemCount(inp){
   const countEl = row.querySelector('.field-count');
   countEl.textContent = count + '자' + (limit!=null ? ` / ${limit}` : '');
   const maxPx = GFA_SMART_MAX_WIDTH_PX[inp.dataset.label];
-  const over = (limit!=null && count > limit) || (maxPx && Math.round(measureTextWidthPx(val)) > maxPx);
+  const over = !!((limit!=null && count > limit) || (maxPx && Math.round(measureTextWidthPx(val)) > maxPx));
   countEl.classList.toggle('over', over);
   row.classList.toggle('over', over);
 }
