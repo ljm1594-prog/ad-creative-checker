@@ -582,13 +582,13 @@ function buildBizboardMergeRequests(sheetId, insertRow0, rows){
   const dataStart0 = insertRow0 + 2;
   const dataEnd0 = dataStart0 + itemCount;
   const WHITE = { red: 1, green: 1, blue: 1 };
+  const TITLE_PEACH = { red: 0xfc/255, green: 0xe5/255, blue: 0xcd/255 }; // #fce5cd
 
-  // 행사명 관련 칸(제목행 + 행사명 열)만 유독 흰색이 아닌 다른 색으로 나오는 현상이 있어서,
-  // 복사해온 서식에 의존하지 않고 병합 직전에 명시적으로 흰 배경을 강제 지정함
+  // 제목행(행사명+구좌 병합)은 살구색으로, 그 아래 병합된 행사명 데이터 열은 흰색으로 명시 지정
   const requests = [
     { repeatCell:{
         range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 3 },
-        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+        cell:{ userEnteredFormat:{ backgroundColor: TITLE_PEACH } },
         fields:'userEnteredFormat.backgroundColor'
     }},
     { mergeCells:{ range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 3 }, mergeType:'MERGE_ALL' } }
