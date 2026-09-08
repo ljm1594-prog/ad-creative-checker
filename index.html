@@ -900,7 +900,7 @@ function restoreChannelState(key){
     inputs.forEach(inp=>{
       const saved = store.fields[`g${inp.dataset.group}_f${inp.dataset.idx}`];
       if(saved != null) inp.value = saved;
-      updateCount(inp);
+      updateCount(inp, true);
     });
   }
   images = (!CHANNELS[key].noImageReview && store.images) ? store.images.map(img=>({...img})) : [];
@@ -1296,7 +1296,7 @@ function renderRepeatableForm(area, cfg){
     });
 
     itemsWrap.querySelectorAll('.field-input').forEach(inp=>{
-      updateCount(inp);
+      updateCount(inp, true);
       inp.addEventListener('input', ()=>{
         const itemIdx = parseInt(inp.dataset.item);
         const fieldKey = `g${inp.dataset.group}_f${inp.dataset.idx}`;
@@ -1361,14 +1361,17 @@ function getMaxWidthPx(label){
   return null;
 }
 
-function updateCount(inp){
+function updateCount(inp, skipTruncate){
   const unit = inp.dataset.unit;
   const limit = inp.dataset.limit ? parseInt(inp.dataset.limit) : null;
   const row = inp.closest('.field-row');
   const maxPx = getMaxWidthPx(inp.dataset.label);
 
   // 픽셀 한도 초과 시 더 이상 못 쓰게 자동으로 잘라냄 (실제 카카오/GFA가 잘라내는 방식과 동일)
-  if(maxPx){
+  // skipTruncate가 true면(목록을 다시 그리기만 하는 경우) 이미 검증된 값을 재측정해서 또 잘라내지 않음 —
+  // 카드를 다시 그릴 때마다 이 로직이 다시 돌면서 폰트 로딩 타이밍 등으로 측정값이 미세하게 달라지면
+  // 이미 입력해둔 정상적인 문구까지 잘려나가는 문제가 있었음
+  if(maxPx && !skipTruncate){
     let val = inp.value;
     let px = Math.round(measureTextWidthPx(val));
     if(px > maxPx){
