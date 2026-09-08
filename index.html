@@ -347,9 +347,9 @@ const CHANNELS = {
     spec:null, noImageReview:true
   },
   bizboard: {
-    label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', repeatable:true,
+    label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', repeatable:true, hasEventName:true,
     groups:[
-      {name:'소재 정보', fields:[['행사명', null], ['소재명', null]]},
+      {name:'소재 정보', fields:[['소재명', null]]},
       {name:'카피', fields:[['메인카피', null],['서브카피', null]]}
     ],
     spec:{sizes:[[315,258]], minKB:0, maxKB:150, transparentPngRequired:true},
@@ -746,6 +746,7 @@ Object.keys(CHANNELS).forEach(key=>{
   if(CHANNELS[key].repeatable){
     channelData[key].items = [ makeBlankItem(key) ];
     channelData[key].previewIdx = 0;
+    if(CHANNELS[key].hasEventName) channelData[key].eventName = '';
   }
 });
 
@@ -1008,8 +1009,7 @@ function renderForm(){
 }
 
 /* ---------------- 반복 가능(여러 소재) 채널 렌더링 — 지금은 GFA 스마트채널 ---------------- */
-/* 그룹 내 위치가 채널마다 달라질 수 있으니(예: 비즈보드 소재 정보 그룹에 행사명이 추가됨),
-   라벨로 값을 찾음 — 인덱스(g0_f0 등) 하드코딩보다 안전 */
+/* 그룹 내 필드 순서가 채널마다 달라질 수 있으니 라벨로 값을 찾음 — 인덱스(g0_f0 등) 하드코딩보다 안전 */
 function getFieldValueByLabel(cfg, item, groupIdx, label){
   const fi = cfg.groups[groupIdx].fields.findIndex(f=>f[0] === label);
   return fi >= 0 ? (item[`g${groupIdx}_f${fi}`] || '') : '';
@@ -1028,14 +1028,14 @@ function generateRepeatableAppendRows(cfg, items){
 /* 카카오 비즈보드 전체 내보내기 — 실제 "광고문구-[SA]" 시트 구조와 동일하게
    [행사명 단독 행] → [열 제목 행] → 소재별 행(행사명/구좌/소재명/메인카피/서브카피/워싱×2) */
 function generateBizboardAppendRows(cfg, items){
-  const eventName = getFieldValueByLabel(cfg, items[0] || {}, 0, '행사명');
+  const eventName = (channelData[currentChannel].eventName || '').trim();
   const rows = [
     [eventName],
     ['행사명', '구좌', '소재명', '메인카피', '서브카피', '워싱', '워싱']
   ];
   items.forEach(item=>{
     rows.push([
-      getFieldValueByLabel(cfg, item, 0, '행사명'),
+      eventName,
       '비즈보드',
       getFieldValueByLabel(cfg, item, 0, '소재명'),
       getFieldValueByLabel(cfg, item, 1, '메인카피'),
@@ -1049,6 +1049,20 @@ function generateBizboardAppendRows(cfg, items){
 function renderRepeatableForm(area, cfg){
   const key = currentChannel;
   const items = channelData[key].items;
+
+  if(cfg.hasEventName){
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `
+      <div class="field-label">행사명</div>
+      <input type="text" class="field-input" id="eventNameInput" value="${escapeHtml(channelData[key].eventName || '')}">
+      <div></div>
+    `;
+    area.appendChild(row);
+    row.querySelector('#eventNameInput').addEventListener('input', (e)=>{
+      channelData[key].eventName = e.target.value;
+    });
+  }
 
   const exportAllBtn = document.createElement('button');
   exportAllBtn.type = 'button';
