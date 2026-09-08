@@ -1328,12 +1328,33 @@ function updateGfaItemCount(inp){
   row.classList.toggle('over', over);
 }
 
-function renderGfaSectionTitle(text){
-  const gt = document.createElement('div');
-  gt.className = 'group-title';
-  gt.style.marginTop = '22px';
-  gt.textContent = text;
-  return gt;
+/* 클릭하면 접고 펼치는 섹션 제목 — 소재가 많은 스마트채널/쇼핑소식을 안 볼 때 접어둘 수 있게 */
+function renderGfaSectionTitle(text, contentEl){
+  const wrap = document.createElement('div');
+  wrap.className = 'group-title';
+  wrap.style.marginTop = '22px';
+  wrap.style.cursor = 'pointer';
+  wrap.style.userSelect = 'none';
+  wrap.style.display = 'flex';
+  wrap.style.alignItems = 'center';
+  wrap.style.gap = '6px';
+  wrap.innerHTML = `<span class="gfa-toggle-arrow">▾</span><span>${text}</span>`;
+  wrap.addEventListener('click', ()=>{
+    const collapsed = contentEl.style.display === 'none';
+    contentEl.style.display = collapsed ? '' : 'none';
+    wrap.querySelector('.gfa-toggle-arrow').textContent = collapsed ? '▾' : '▸';
+  });
+  return wrap;
+}
+
+function renderGfaSectionReviewBtn(key, label){
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'submit-btn';
+  btn.style.marginTop = '10px';
+  btn.textContent = `검수 요청 (${label})`;
+  btn.addEventListener('click', ()=>runGfaSectionReview(key, label, btn));
+  return btn;
 }
 
 function renderGfaCombinedForm(){
@@ -1357,14 +1378,6 @@ function renderGfaCombinedForm(){
     gfaCombinedEventName = e.target.value;
   });
 
-  const reviewBtn = document.createElement('button');
-  reviewBtn.type = 'button';
-  reviewBtn.className = 'submit-btn';
-  reviewBtn.style.marginTop = '12px';
-  reviewBtn.textContent = '검수 요청 (피드 + 스마트채널 + 쇼핑소식)';
-  reviewBtn.addEventListener('click', ()=>runGfaCombinedReview(reviewBtn));
-  area.appendChild(reviewBtn);
-
   const exportBtn = document.createElement('button');
   exportBtn.type = 'button';
   exportBtn.className = 'apply-bulk-btn';
@@ -1375,8 +1388,13 @@ function renderGfaCombinedForm(){
   area.appendChild(exportBtn);
 
   // ---- GFA 피드 ----
-  area.appendChild(renderGfaSectionTitle('GFA 피드'));
-  area.appendChild((()=>{ const n=document.createElement('div'); n.className='spec-hint'; n.textContent=CHANNELS.gfa_feed.specHint; return n; })());
+  const feedContent = document.createElement('div');
+  area.appendChild(renderGfaSectionTitle('GFA 피드', feedContent));
+  area.appendChild(feedContent);
+  const feedHint = document.createElement('div');
+  feedHint.className = 'spec-hint';
+  feedHint.textContent = CHANNELS.gfa_feed.specHint;
+  feedContent.appendChild(feedHint);
   const feedRow = document.createElement('div');
   feedRow.className = 'field-row';
   const feedAdCopy = channelData.gfa_feed.fields.adCopy || '';
@@ -1385,7 +1403,7 @@ function renderGfaCombinedForm(){
     <input type="text" class="field-input" id="gfaFeedAdCopyInput" value="${escapeHtml(feedAdCopy)}">
     <div class="field-count" id="gfaFeedCount">0자</div>
   `;
-  area.appendChild(feedRow);
+  feedContent.appendChild(feedRow);
   const feedInp = feedRow.querySelector('#gfaFeedAdCopyInput');
   const feedCountEl = feedRow.querySelector('#gfaFeedCount');
   function updateFeedCount(){
@@ -1398,28 +1416,42 @@ function renderGfaCombinedForm(){
   feedInp.addEventListener('input', ()=>{ channelData.gfa_feed.fields.adCopy = feedInp.value; updateFeedCount(); });
   updateFeedCount();
   const feedImgWrap = document.createElement('div');
-  area.appendChild(feedImgWrap);
+  feedContent.appendChild(feedImgWrap);
   renderGfaImageSection(feedImgWrap, channelData.gfa_feed.images, 'feed');
+  feedContent.appendChild(renderGfaSectionReviewBtn('gfa_feed', 'GFA 피드'));
 
   // ---- GFA 스마트채널 ----
-  area.appendChild(renderGfaSectionTitle('GFA 스마트채널'));
-  area.appendChild((()=>{ const n=document.createElement('div'); n.className='spec-hint'; n.textContent=CHANNELS.gfa_smart.specHint; return n; })());
-  renderGfaItemsSection(area, 'gfa_smart', CHANNELS.gfa_smart);
+  const smartContent = document.createElement('div');
+  area.appendChild(renderGfaSectionTitle('GFA 스마트채널', smartContent));
+  area.appendChild(smartContent);
+  const smartHint = document.createElement('div');
+  smartHint.className = 'spec-hint';
+  smartHint.textContent = CHANNELS.gfa_smart.specHint;
+  smartContent.appendChild(smartHint);
+  renderGfaItemsSection(smartContent, 'gfa_smart', CHANNELS.gfa_smart);
   const smartImgWrap = document.createElement('div');
-  area.appendChild(smartImgWrap);
+  smartContent.appendChild(smartImgWrap);
   renderGfaImageSection(smartImgWrap, channelData.gfa_smart.images, 'smart');
+  smartContent.appendChild(renderGfaSectionReviewBtn('gfa_smart', 'GFA 스마트채널'));
 
   // ---- GFA 쇼핑소식 ----
-  area.appendChild(renderGfaSectionTitle('GFA 쇼핑소식'));
-  area.appendChild((()=>{ const n=document.createElement('div'); n.className='spec-hint'; n.textContent=CHANNELS.gfa_shopping.specHint; return n; })());
-  renderGfaItemsSection(area, 'gfa_shopping', CHANNELS.gfa_shopping);
+  const shoppingContent = document.createElement('div');
+  area.appendChild(renderGfaSectionTitle('GFA 쇼핑소식', shoppingContent));
+  area.appendChild(shoppingContent);
+  const shoppingHint = document.createElement('div');
+  shoppingHint.className = 'spec-hint';
+  shoppingHint.textContent = CHANNELS.gfa_shopping.specHint;
+  shoppingContent.appendChild(shoppingHint);
+  renderGfaItemsSection(shoppingContent, 'gfa_shopping', CHANNELS.gfa_shopping);
   const shoppingImgWrap = document.createElement('div');
-  area.appendChild(shoppingImgWrap);
+  shoppingContent.appendChild(shoppingImgWrap);
   renderGfaImageSection(shoppingImgWrap, channelData.gfa_shopping.images, 'shopping');
+  shoppingContent.appendChild(renderGfaSectionReviewBtn('gfa_shopping', 'GFA 쇼핑소식'));
 }
 
 /* 세 채널 각각의 텍스트를 채널당 한 번씩(이미지 여러 장이면 장별로) AI 검수 요청 → 결과는 한 화면에 모아서 표시 */
-async function runGfaCombinedReview(btn){
+/* 섹션 하나만 검수 요청 — 결과는 오른쪽 판정 결과 패널에 그 섹션 것만 표시(다른 섹션 결과는 지워짐) */
+async function runGfaSectionReview(key, label, btn){
   const apiKey = window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || '';
   if(!apiKey){ alert('API 키가 설정되지 않았어. ⚙ 설정에서 입력해줘.'); return; }
 
@@ -1427,87 +1459,78 @@ async function runGfaCombinedReview(btn){
   btn.disabled = true;
   btn.textContent = '검수 중...';
   const resultArea = document.getElementById('resultArea');
-  resultArea.innerHTML = `<div class="loading-state"><div class="spin"></div><div>피드/스마트채널/쇼핑소식 검수 중...</div></div>`;
+  resultArea.innerHTML = `<div class="loading-state"><div class="spin"></div><div>${label} 검수 중...</div></div>`;
 
-  const sections = [
-    { key:'gfa_feed', label:'GFA 피드' },
-    { key:'gfa_smart', label:'GFA 스마트채널' },
-    { key:'gfa_shopping', label:'GFA 쇼핑소식' }
-  ];
-
-  let html = '';
   try{
-    for(const sec of sections){
-      const cfg = CHANNELS[sec.key];
-      const store = channelData[sec.key];
-      let fieldsText = '';
-      const overLimitIssues = [];
+    const cfg = CHANNELS[key];
+    const store = channelData[key];
+    let fieldsText = '';
+    const overLimitIssues = [];
 
-      if(sec.key === 'gfa_feed'){
-        const val = (store.fields.adCopy || '').trim();
-        const count = val.length;
-        fieldsText = `광고문구: ${val || '(공란)'} (${count}자/65)`;
-        if(count > 65){
-          overLimitIssues.push({severity:'high', category:'글자수 초과', reason:`광고문구가 ${count}자로 제한(65자)을 초과함.`, suggestion:`${count-65}자 줄여야 함.`});
-        }
-      }else{
-        const lines = [];
-        store.items.forEach((item, idx)=>{
-          lines.push(`[소재 ${idx+1}]`);
-          cfg.groups.forEach((group, gi)=>{
-            group.fields.forEach((f, fi)=>{
-              const [label, limit] = f;
-              const val = (item[`g${gi}_f${fi}`] || '').trim();
-              const count = val.length;
-              let pxNote = '';
-              if(sec.key === 'gfa_smart'){
-                const maxPx = GFA_SMART_MAX_WIDTH_PX[label];
-                if(maxPx){
-                  const px = Math.round(measureTextWidthPx(val));
-                  pxNote = ` [렌더링 폭 약 ${px}px/${maxPx}px]`;
-                  if(px > maxPx){
-                    overLimitIssues.push({severity:'high', category:'텍스트 폭 초과', reason:`소재 ${idx+1} "${label}"의 실제 렌더링 폭이 약 ${px}px로 최대폭(${maxPx}px)을 초과해 잘릴 수 있음.`, suggestion:'문구를 줄여서 폭을 줄여주세요.'});
-                  }
+    if(key === 'gfa_feed'){
+      const val = (store.fields.adCopy || '').trim();
+      const count = val.length;
+      fieldsText = `광고문구: ${val || '(공란)'} (${count}자/65)`;
+      if(count > 65){
+        overLimitIssues.push({severity:'high', category:'글자수 초과', reason:`광고문구가 ${count}자로 제한(65자)을 초과함.`, suggestion:`${count-65}자 줄여야 함.`});
+      }
+    }else{
+      const lines = [];
+      store.items.forEach((item, idx)=>{
+        lines.push(`[소재 ${idx+1}]`);
+        cfg.groups.forEach((group, gi)=>{
+          group.fields.forEach((f, fi)=>{
+            const [flabel, limit] = f;
+            const val = (item[`g${gi}_f${fi}`] || '').trim();
+            const count = val.length;
+            let pxNote = '';
+            if(key === 'gfa_smart'){
+              const maxPx = GFA_SMART_MAX_WIDTH_PX[flabel];
+              if(maxPx){
+                const px = Math.round(measureTextWidthPx(val));
+                pxNote = ` [렌더링 폭 약 ${px}px/${maxPx}px]`;
+                if(px > maxPx){
+                  overLimitIssues.push({severity:'high', category:'텍스트 폭 초과', reason:`소재 ${idx+1} "${flabel}"의 실제 렌더링 폭이 약 ${px}px로 최대폭(${maxPx}px)을 초과해 잘릴 수 있음.`, suggestion:'문구를 줄여서 폭을 줄여주세요.'});
                 }
               }
-              lines.push(`${label}: ${val || '(공란)'} (${count}자${limit!=null?'/'+limit:''})${pxNote}`);
-              if(limit != null && count > limit){
-                overLimitIssues.push({severity:'high', category:'글자수 초과', reason:`소재 ${idx+1} "${label}"이 ${count}자로 제한(${limit}자)을 초과함.`, suggestion:`${count-limit}자 줄여야 함.`});
-              }
-            });
+            }
+            lines.push(`${flabel}: ${val || '(공란)'} (${count}자${limit!=null?'/'+limit:''})${pxNote}`);
+            if(limit != null && count > limit){
+              overLimitIssues.push({severity:'high', category:'글자수 초과', reason:`소재 ${idx+1} "${flabel}"이 ${count}자로 제한(${limit}자)을 초과함.`, suggestion:`${count-limit}자 줄여야 함.`});
+            }
           });
         });
-        fieldsText = lines.join('\n');
-      }
+      });
+      fieldsText = lines.join('\n');
+    }
 
-      html += `<div style="font-size:12.5px; font-weight:800; color:var(--primary); margin:${html?'22px':'0'} 0 10px;">${sec.label}</div>`;
-
-      const imgList = store.images.length ? store.images.slice() : [null];
-      for(let i=0; i<imgList.length; i++){
-        resultArea.innerHTML = html + `<div class="loading-state"><div class="spin"></div><div>${sec.label} ${imgList.length>1 ? `이미지 ${i+1}/${imgList.length} `:''}검수 중...</div></div>`;
-        try{
-          const parsed = await reviewOneImage(cfg, fieldsText, overLimitIssues, imgList[i], apiKey);
-          const vm = verdictMeta(parsed.verdict);
-          const issues = parsed.issues || [];
-          const issuesHtml = issues.length === 0
-            ? `<div class="no-issues">걸리는 항목 없음</div>`
-            : `<div class="issue-list">` + issues.map(is=>`
-                <div class="issue ${is.severity}">
-                  <div class="issue-cat">${escapeHtml(is.category)}</div>
-                  <div class="issue-reason">${escapeHtml(is.reason)}</div>
-                  <div class="issue-fix"><b>수정 제안 →</b> ${escapeHtml(is.suggestion)}</div>
-                </div>`).join('') + `</div>`;
-          html += `
-            <div class="verdict-pill ${vm.cls}"><span class="dot"></span>${vm.big} · ${vm.small}</div>
-            <div class="note-box" style="margin-bottom:14px;">${escapeHtml(parsed.summary)}</div>
-            ${issuesHtml}
-          `;
-        }catch(err){
-          html += `<div class="error-box">${escapeHtml(err.message || '판정 중 오류가 났어.')}</div>`;
-        }
+    const imgList = store.images.length ? store.images.slice() : [null];
+    let html = '';
+    for(let i=0; i<imgList.length; i++){
+      resultArea.innerHTML = html + `<div class="loading-state"><div class="spin"></div><div>${label} ${imgList.length>1 ? `이미지 ${i+1}/${imgList.length} `:''}검수 중...</div></div>`;
+      try{
+        const parsed = await reviewOneImage(cfg, fieldsText, overLimitIssues, imgList[i], apiKey);
+        const vm = verdictMeta(parsed.verdict);
+        const issues = parsed.issues || [];
+        const issuesHtml = issues.length === 0
+          ? `<div class="no-issues">걸리는 항목 없음</div>`
+          : `<div class="issue-list">` + issues.map(is=>`
+              <div class="issue ${is.severity}">
+                <div class="issue-cat">${escapeHtml(is.category)}</div>
+                <div class="issue-reason">${escapeHtml(is.reason)}</div>
+                <div class="issue-fix"><b>수정 제안 →</b> ${escapeHtml(is.suggestion)}</div>
+              </div>`).join('') + `</div>`;
+        html += `
+          ${imgList.length>1 ? `<div style="font-size:12px; font-weight:800; color:var(--text-soft); margin:${html?'16px':'0'} 0 6px;">이미지 ${i+1}/${imgList.length}</div>` : ''}
+          <div class="verdict-pill ${vm.cls}"><span class="dot"></span>${vm.big} · ${vm.small}</div>
+          <div class="note-box" style="margin-bottom:14px;">${escapeHtml(parsed.summary)}</div>
+          ${issuesHtml}
+        `;
+      }catch(err){
+        html += `<div class="error-box">${escapeHtml(err.message || '판정 중 오류가 났어.')}</div>`;
       }
     }
-    resultArea.innerHTML = html;
+    resultArea.innerHTML = `<div style="font-size:12.5px; font-weight:800; color:var(--primary); margin-bottom:10px;">${label}</div>` + html;
   }catch(err){
     resultArea.innerHTML = `<div class="error-box">${escapeHtml(err.message || '검수 중 오류가 났어.')}</div>`;
   }finally{
