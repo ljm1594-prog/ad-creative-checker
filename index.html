@@ -419,8 +419,9 @@ function byteLen(str){
 }
 
 /* ---------------- 구글 시트로 바로 내보내기 ----------------
-   채널별로 설정된 gid가 있으면: 기존 스프레드시트의 그 탭 헤더 행을 읽어서, 라벨이 일치하는 열에
-   값을 맞춰 넣은 뒤 새 행으로 추가(append)함. gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
+   채널별로 설정된 gid가 있으면: 그 gid 탭에 각 채널의 기존 "복사" 버튼과 완전히 같은 행 구성으로
+   새 행을 이어붙임(append) — 팀이 그동안 복사→붙여넣기 해온 시트 포맷을 그대로 재현.
+   gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
 const DEFAULT_GOOGLE_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
 const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799' };
 const SHEET_GID_FIELD_MAP = {
@@ -441,69 +442,6 @@ function getSheetGidForChannel(channelKey){
     }
   }
   return '';
-}
-
-function normalizeHeaderKey(s){
-  return String(s || '').toLowerCase().replace(/[\s()·・:\-\/]/g, '');
-}
-
-/* 필드 목록을 {후보 헤더명들, 값} 목록으로 변환 — 같은 라벨이 그룹 내 여러 번 나오면(예: 브랜드검색의 "설명문구"×2)
-   "그룹명 라벨", "라벨n번째" 같은 후보도 같이 만들어서 실제 시트 헤더가 어떻게 적혀 있어도 최대한 매칭되게 함 */
-function buildFieldEntriesFromValues(cfg, valueGetter){
-  const entries = [];
-  cfg.groups.forEach((group, gi)=>{
-    const labelCounts = {};
-    group.fields.forEach(f=>{ labelCounts[f[0]] = (labelCounts[f[0]] || 0) + 1; });
-    const seen = {};
-    group.fields.forEach((f, fi)=>{
-      const label = f[0];
-      seen[label] = (seen[label] || 0) + 1;
-      const occurrence = seen[label];
-      const total = labelCounts[label];
-      const value = valueGetter(gi, fi) || '';
-      const candidates = new Set([label, `${group.name} ${label}`, `${group.name}${label}`]);
-      if(total > 1){
-        candidates.add(`${label}${occurrence}`);
-        candidates.add(`${label} ${occurrence}`);
-        candidates.add(`${group.name} ${label}${occurrence}`);
-        candidates.add(`${group.name}${label}${occurrence}`);
-      }
-      entries.push({ candidates:[...candidates], value });
-    });
-  });
-  return entries;
-}
-
-function collectFormEntries(cfg){
-  const area = document.getElementById('formArea');
-  return buildFieldEntriesFromValues(cfg, (gi, fi)=>{
-    const inp = area.querySelector(`.field-input[data-group="${gi}"][data-idx="${fi}"]`);
-    return inp ? inp.value.trim() : '';
-  });
-}
-
-function collectItemEntries(cfg, item){
-  return buildFieldEntriesFromValues(cfg, (gi, fi)=> item[`g${gi}_f${fi}`] || '');
-}
-
-function entriesToPlainRows(entriesList){
-  if(entriesList.length === 0) return [];
-  const header = entriesList[0].map(e=> e.candidates[0]);
-  const rows = entriesList.map(entries => entries.map(e=> e.value));
-  return [header, ...rows];
-}
-
-function matchEntriesToHeaders(headers, entries, extra){
-  return headers.map(h=>{
-    const norm = normalizeHeaderKey(h);
-    if(extra){
-      for(const k in extra){
-        if(normalizeHeaderKey(k) === norm) return extra[k];
-      }
-    }
-    const found = entries.find(e => e.candidates.some(c => normalizeHeaderKey(c) === norm));
-    return found ? found.value : '';
-  });
 }
 
 let googleTokenClient = null;
@@ -568,8 +506,8 @@ async function exportRowsToGoogleSheet(rows, title){
   window.open(sheet.spreadsheetUrl, '_blank');
 }
 
-/* 채널별로 지정된 gid 탭에 헤더 매칭 후 새 행으로 추가 */
-async function appendRowsToSheetTabByGid(spreadsheetId, gid, entriesList, extra){
+/* 채널별로 지정된 gid 탭 끝에, 그 채널의 기존 복사 포맷과 동일한 행을 그대로 이어붙임 */
+async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows){
   const token = await getGoogleAccessToken();
 
   const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, {
@@ -581,25 +519,14 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, entriesList, extra)
   if(!props) throw new Error(`gid=${gid}에 해당하는 탭을 찾을 수 없어. 설정에서 gid를 다시 확인해줘.`);
   const sheetTitle = props.title;
 
-  const headerRes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!1:1`,
-    { headers:{'Authorization':'Bearer ' + token} }
-  );
-  if(!headerRes.ok) throw new Error('헤더 행 조회 실패: ' + (await headerRes.text()));
-  const headerJson = await headerRes.json();
-  const headers = (headerJson.values && headerJson.values[0]) || [];
-  if(headers.length === 0){
-    throw new Error(`"${sheetTitle}" 탭에 헤더 행(1행)이 없어서 어느 열에 넣을지 알 수 없어. 첫 행에 열 제목을 채워줘.`);
-  }
-
-  const rows = entriesList.map(entries => matchEntriesToHeaders(headers, entries, extra));
+  const rowsWithSpacer = [...rows, []]; // 다음에 이어붙일 소재와 구분되도록 빈 줄 하나 추가
 
   const appendRes = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     {
       method:'POST',
       headers:{'Authorization':'Bearer ' + token, 'Content-Type':'application/json'},
-      body: JSON.stringify({ values: rows })
+      body: JSON.stringify({ values: rowsWithSpacer })
     }
   );
   if(!appendRes.ok) throw new Error('시트에 행 추가 실패: ' + (await appendRes.text()));
@@ -607,20 +534,19 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, entriesList, extra)
   window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}`, '_blank');
 }
 
-function wireGoogleSheetExportBtn(btn, getEntriesList, title){
+function wireGoogleSheetExportBtn(btn, getRows, title){
   btn.addEventListener('click', async ()=>{
     const orig = btn.textContent;
     btn.disabled = true;
     btn.textContent = '내보내는 중...';
     try{
-      const entriesList = getEntriesList();
+      const rows = getRows();
       const gid = getSheetGidForChannel(currentChannel);
       const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
       if(gid && spreadsheetId){
-        const extra = { '날짜': new Date().toISOString().slice(0,10), '채널': CHANNELS[currentChannel].label };
-        await appendRowsToSheetTabByGid(spreadsheetId, gid, entriesList, extra);
+        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows);
       }else{
-        await exportRowsToGoogleSheet(entriesToPlainRows(entriesList), title);
+        await exportRowsToGoogleSheet(rows, title);
       }
     }catch(e){
       alert(e.message || '구글 시트 내보내기 실패');
@@ -808,7 +734,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>[collectFormEntries(cfg)], `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`);
     area.appendChild(exportBtn);
   }
 
@@ -843,7 +769,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>[collectFormEntries(cfg)], `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateSimpleCopyRows(cfg), `${cfg.label} 소재`);
     area.appendChild(exportBtn);
   }
 
@@ -878,7 +804,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>[collectFormEntries(cfg)], `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`);
     area.appendChild(exportBtn);
   }
 
@@ -933,6 +859,16 @@ function renderForm(){
 }
 
 /* ---------------- 반복 가능(여러 소재) 채널 렌더링 — 지금은 GFA 스마트채널 ---------------- */
+/* 반복 채널(카카오 비즈보드/GFA 스마트채널) 전체 내보내기 — 아이템별 "📋 복사" 버튼과 동일하게
+   [소재명, 카피 그룹 전체를 줄바꿈으로 합친 한 셀] 2열 형태로, 소재마다 한 행씩 */
+function generateRepeatableAppendRows(cfg, items){
+  return items.map(item=>{
+    const 소재명 = item['g0_f0'] || '';
+    const copyBlock = cfg.groups[1].fields.map((f, fi)=> item[`g1_f${fi}`] || '').join('\n');
+    return [소재명, copyBlock];
+  });
+}
+
 function renderRepeatableForm(area, cfg){
   const key = currentChannel;
   const items = channelData[key].items;
@@ -943,7 +879,7 @@ function renderRepeatableForm(area, cfg){
   exportAllBtn.style.marginBottom = '10px';
   exportAllBtn.style.background = 'var(--mint)';
   exportAllBtn.textContent = '📄 전체 소재 구글 시트로 내보내기';
-  wireGoogleSheetExportBtn(exportAllBtn, ()=>items.map(item=>collectItemEntries(cfg, item)), `${cfg.label} 소재`);
+  wireGoogleSheetExportBtn(exportAllBtn, ()=>generateRepeatableAppendRows(cfg, items), `${cfg.label} 소재`);
   area.appendChild(exportAllBtn);
 
   const itemsWrap = document.createElement('div');
