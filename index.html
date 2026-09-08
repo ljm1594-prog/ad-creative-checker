@@ -349,7 +349,7 @@ const CHANNELS = {
   bizboard: {
     label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', repeatable:true,
     groups:[
-      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'소재 정보', fields:[['행사명', null], ['소재명', null]]},
       {name:'카피', fields:[['메인카피', null],['서브카피', null]]}
     ],
     spec:{sizes:[[315,258]], minKB:0, maxKB:150, transparentPngRequired:true},
@@ -522,7 +522,7 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows){
   const rowsWithSpacer = [...rows, []]; // 다음에 이어붙일 소재와 구분되도록 빈 줄 하나 추가
 
   const appendRes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!B1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     {
       method:'POST',
       headers:{'Authorization':'Bearer ' + token, 'Content-Type':'application/json'},
@@ -859,14 +859,42 @@ function renderForm(){
 }
 
 /* ---------------- 반복 가능(여러 소재) 채널 렌더링 — 지금은 GFA 스마트채널 ---------------- */
-/* 반복 채널(카카오 비즈보드/GFA 스마트채널) 전체 내보내기 — 아이템별 "📋 복사" 버튼과 동일하게
+/* 그룹 내 위치가 채널마다 달라질 수 있으니(예: 비즈보드 소재 정보 그룹에 행사명이 추가됨),
+   라벨로 값을 찾음 — 인덱스(g0_f0 등) 하드코딩보다 안전 */
+function getFieldValueByLabel(cfg, item, groupIdx, label){
+  const fi = cfg.groups[groupIdx].fields.findIndex(f=>f[0] === label);
+  return fi >= 0 ? (item[`g${groupIdx}_f${fi}`] || '') : '';
+}
+
+/* 반복 채널(GFA 스마트채널 등) 전체 내보내기 — 아이템별 "📋 복사" 버튼과 동일하게
    [소재명, 카피 그룹 전체를 줄바꿈으로 합친 한 셀] 2열 형태로, 소재마다 한 행씩 */
 function generateRepeatableAppendRows(cfg, items){
   return items.map(item=>{
-    const 소재명 = item['g0_f0'] || '';
+    const 소재명 = getFieldValueByLabel(cfg, item, 0, '소재명');
     const copyBlock = cfg.groups[1].fields.map((f, fi)=> item[`g1_f${fi}`] || '').join('\n');
     return [소재명, copyBlock];
   });
+}
+
+/* 카카오 비즈보드 전체 내보내기 — 실제 "광고문구-[SA]" 시트 구조와 동일하게
+   [행사명 단독 행] → [열 제목 행] → 소재별 행(행사명/구좌/소재명/메인카피/서브카피/워싱×2) */
+function generateBizboardAppendRows(cfg, items){
+  const eventName = getFieldValueByLabel(cfg, items[0] || {}, 0, '행사명');
+  const rows = [
+    [eventName],
+    ['행사명', '구좌', '소재명', '메인카피', '서브카피', '워싱', '워싱']
+  ];
+  items.forEach(item=>{
+    rows.push([
+      getFieldValueByLabel(cfg, item, 0, '행사명'),
+      '비즈보드',
+      getFieldValueByLabel(cfg, item, 0, '소재명'),
+      getFieldValueByLabel(cfg, item, 1, '메인카피'),
+      getFieldValueByLabel(cfg, item, 1, '서브카피'),
+      '', ''
+    ]);
+  });
+  return rows;
 }
 
 function renderRepeatableForm(area, cfg){
@@ -879,7 +907,10 @@ function renderRepeatableForm(area, cfg){
   exportAllBtn.style.marginBottom = '10px';
   exportAllBtn.style.background = 'var(--mint)';
   exportAllBtn.textContent = '📄 전체 소재 구글 시트로 내보내기';
-  wireGoogleSheetExportBtn(exportAllBtn, ()=>generateRepeatableAppendRows(cfg, items), `${cfg.label} 소재`);
+  const repeatableRowGenerator = key === 'bizboard'
+    ? ()=>generateBizboardAppendRows(cfg, items)
+    : ()=>generateRepeatableAppendRows(cfg, items);
+  wireGoogleSheetExportBtn(exportAllBtn, repeatableRowGenerator, `${cfg.label} 소재`);
   area.appendChild(exportAllBtn);
 
   const itemsWrap = document.createElement('div');
@@ -914,7 +945,7 @@ function renderRepeatableForm(area, cfg){
           const fieldKey = `g${gi}_f${fi}`;
           const row = document.createElement('div');
           row.className = 'field-row';
-          const showPx = PX_ENABLED_CHANNELS.includes(key) && label !== '소재명';
+          const showPx = PX_ENABLED_CHANNELS.includes(key) && label !== '소재명' && label !== '행사명';
           row.innerHTML = `
             <div class="field-label">${label}${limit!=null ? ` (${limit}${cfg.unit==='byte'?'B':'자'})` : ''}</div>
             <input type="text" class="field-input" value="${escapeHtml(item[fieldKey] || '')}"
@@ -959,7 +990,7 @@ function renderRepeatableForm(area, cfg){
       btn.addEventListener('click', async ()=>{
         const idx = parseInt(btn.dataset.item);
         const item = items[idx];
-        const 소재명 = item['g0_f0'] || '';
+        const 소재명 = getFieldValueByLabel(cfg, item, 0, '소재명');
         const copyLines = cfg.groups[1].fields.map((f, fi)=> item[`g1_f${fi}`] || '');
         const copyBlock = copyLines.join('\n');
         const copyText = [tsvCell(소재명), tsvCell(copyBlock)].join('\t');
@@ -984,7 +1015,7 @@ function renderRepeatableForm(area, cfg){
 }
 
 function getMaxWidthPx(label){
-  if(label === '소재명') return null;
+  if(label === '소재명' || label === '행사명') return null;
   if(currentChannel === 'bizboard'){
     return label === '메인카피' ? KAKAO_COPY_MAX_WIDTH_PX.main : KAKAO_COPY_MAX_WIDTH_PX.sub;
   }
@@ -1198,7 +1229,7 @@ function collectFieldsSummary(){
             if(label === '서브카피') subVal = val;
           }
           let pxNote = '';
-          if(PX_ENABLED_CHANNELS.includes(currentChannel) && label !== '소재명'){
+          if(PX_ENABLED_CHANNELS.includes(currentChannel) && label !== '소재명' && label !== '행사명'){
             const px = Math.round(measureTextWidthPx(val));
             const maxPx = getMaxWidthPx(label);
             pxNote = ` [렌더링 폭 약 ${px}px${maxPx ? '/'+maxPx+'px' : ' (미보정)'}]`;
