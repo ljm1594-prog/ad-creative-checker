@@ -579,12 +579,26 @@ function findInsertionPointAtTop(colBValues){
 /* 카카오 비즈보드 전용 — 실제 시트처럼 [제목행: 행사명+구좌 2열 병합] [행사명 열 전체 병합] [구좌 열 전체 병합] */
 function buildBizboardMergeRequests(sheetId, insertRow0, rows){
   const itemCount = rows.length - 2; // 1번째=제목행, 2번째=열 제목행, 나머지가 소재별 데이터 행
+  const dataStart0 = insertRow0 + 2;
+  const dataEnd0 = dataStart0 + itemCount;
+  const WHITE = { red: 1, green: 1, blue: 1 };
+
+  // 행사명 관련 칸(제목행 + 행사명 열)만 유독 흰색이 아닌 다른 색으로 나오는 현상이 있어서,
+  // 복사해온 서식에 의존하지 않고 병합 직전에 명시적으로 흰 배경을 강제 지정함
   const requests = [
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 3 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+        fields:'userEnteredFormat.backgroundColor'
+    }},
     { mergeCells:{ range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 3 }, mergeType:'MERGE_ALL' } }
   ];
   if(itemCount > 1){
-    const dataStart0 = insertRow0 + 2;
-    const dataEnd0 = dataStart0 + itemCount;
+    requests.push({ repeatCell:{
+        range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 1, endColumnIndex: 2 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
+        fields:'userEnteredFormat.backgroundColor'
+    }});
     requests.push({ mergeCells:{ range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 1, endColumnIndex: 2 }, mergeType:'MERGE_ALL' } });
     requests.push({ mergeCells:{ range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 2, endColumnIndex: 3 }, mergeType:'MERGE_ALL' } });
   }
