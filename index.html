@@ -57,7 +57,10 @@
   .modal-box{
     background:#fff; border-radius:20px; width:100%; max-width:560px; padding:20px;
     box-shadow:0 20px 60px rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:4px;
+    max-height:85vh; overflow-y:auto;
   }
+  .sheet-map-row{display:grid; grid-template-columns:140px 1fr; align-items:center; gap:8px; padding:5px 0;}
+  .sheet-map-row .field-label{font-size:11.5px; color:var(--text-soft); font-weight:700;}
   .modal-header{display:flex; align-items:center; justify-content:space-between; font-size:15px; font-weight:800; margin-bottom:8px;}
   .modal-close{border:none; background:#F5F6FC; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:var(--text-soft);}
   .channel-tabs{display:flex; flex-direction:column; gap:5px;}
@@ -303,6 +306,19 @@
     <div class="field-row" style="grid-template-columns:1fr;">
       <input type="text" id="googleClientIdInput" class="field-input" placeholder="여기에 구글 OAuth 클라이언트 ID 붙여넣기">
     </div>
+    <div class="note-box" style="margin:14px 0 4px;">
+      "구글 시트로 내보내기"는 아래 스프레드시트의, 채널별로 지정한 탭(gid)에 새 행으로 바로 쌓여. 채널의 gid를 비워두면 그 채널은 대신 새 시트를 만들어서 열어.
+    </div>
+    <div class="field-row" style="grid-template-columns:1fr;">
+      <input type="text" id="sheetIdInput" class="field-input" placeholder="구글 스프레드시트 ID (공통)">
+    </div>
+    <div class="sheet-map-row"><div class="field-label">브랜드검색(영상/이미지)</div><input type="text" id="sheetGid_brand" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">카카오 비즈보드</div><input type="text" id="sheetGid_bizboard" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">GFA 피드</div><input type="text" id="sheetGid_gfa_feed" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">GFA 스마트채널</div><input type="text" id="sheetGid_gfa_smart" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">GFA 쇼핑소식</div><input type="text" id="sheetGid_gfa_shopping" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">구글 디맨드젠</div><input type="text" id="sheetGid_gdemand" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">메타</div><input type="text" id="sheetGid_meta" class="field-input" placeholder="gid"></div>
     <button class="submit-btn" id="saveApiKeyBtn" style="margin-top:12px;">저장</button>
     <div id="apiKeyStatus" style="text-align:center; font-size:12px; color:var(--mint); margin-top:8px; min-height:16px;"></div>
   </div>
@@ -379,6 +395,15 @@ const CHANNELS = {
     spec:{sizes:[[960,1200],[1200,1200],[1200,628]], minKB:0, maxKB:5120},
     specHint:'이미지 규격: 960×1200 / 1200×1200 / 1200×628px 중 하나 · 용량 최대 5MB',
     note:'짧은/긴 광고 제목에 느낌표·기호·구두점 사용 불가, 영어 대문자 연속 사용 불가'
+  },
+  meta: {
+    label:'메타', unit:'char', dotColor:'#0668E1', dotText:'M', simpleCopyFormat:true, noImageReview:true,
+    groups:[
+      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'카피', fields:[['제목', null], ['텍스트', null, {multiline:true}]]},
+      {name:'파일 위치', fields:[['폴더 경로', null]]}
+    ],
+    spec:null
   }
 };
 
@@ -393,7 +418,94 @@ function byteLen(str){
   return n;
 }
 
-/* ---------------- 구글 시트로 바로 내보내기 (OAuth 로그인 → 새 시트 생성 → 데이터 채움 → 새 탭으로 열기) ---------------- */
+/* ---------------- 구글 시트로 바로 내보내기 ----------------
+   채널별로 설정된 gid가 있으면: 기존 스프레드시트의 그 탭 헤더 행을 읽어서, 라벨이 일치하는 열에
+   값을 맞춰 넣은 뒤 새 행으로 추가(append)함. gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
+const DEFAULT_GOOGLE_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
+const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799' };
+const SHEET_GID_FIELD_MAP = {
+  brand: ['brand_video', 'brand_image'],
+  bizboard: ['bizboard'],
+  gfa_feed: ['gfa_feed'],
+  gfa_smart: ['gfa_smart'],
+  gfa_shopping: ['gfa_shopping'],
+  gdemand: ['gdemand'],
+  meta: ['meta']
+};
+
+function getSheetGidForChannel(channelKey){
+  for(const [fieldKey, channels] of Object.entries(SHEET_GID_FIELD_MAP)){
+    if(channels.includes(channelKey)){
+      const stored = localStorage.getItem(`sheet_gid_${fieldKey}`);
+      return (stored != null ? stored : (DEFAULT_SHEET_GIDS[fieldKey] || '')).trim();
+    }
+  }
+  return '';
+}
+
+function normalizeHeaderKey(s){
+  return String(s || '').toLowerCase().replace(/[\s()·・:\-\/]/g, '');
+}
+
+/* 필드 목록을 {후보 헤더명들, 값} 목록으로 변환 — 같은 라벨이 그룹 내 여러 번 나오면(예: 브랜드검색의 "설명문구"×2)
+   "그룹명 라벨", "라벨n번째" 같은 후보도 같이 만들어서 실제 시트 헤더가 어떻게 적혀 있어도 최대한 매칭되게 함 */
+function buildFieldEntriesFromValues(cfg, valueGetter){
+  const entries = [];
+  cfg.groups.forEach((group, gi)=>{
+    const labelCounts = {};
+    group.fields.forEach(f=>{ labelCounts[f[0]] = (labelCounts[f[0]] || 0) + 1; });
+    const seen = {};
+    group.fields.forEach((f, fi)=>{
+      const label = f[0];
+      seen[label] = (seen[label] || 0) + 1;
+      const occurrence = seen[label];
+      const total = labelCounts[label];
+      const value = valueGetter(gi, fi) || '';
+      const candidates = new Set([label, `${group.name} ${label}`, `${group.name}${label}`]);
+      if(total > 1){
+        candidates.add(`${label}${occurrence}`);
+        candidates.add(`${label} ${occurrence}`);
+        candidates.add(`${group.name} ${label}${occurrence}`);
+        candidates.add(`${group.name}${label}${occurrence}`);
+      }
+      entries.push({ candidates:[...candidates], value });
+    });
+  });
+  return entries;
+}
+
+function collectFormEntries(cfg){
+  const area = document.getElementById('formArea');
+  return buildFieldEntriesFromValues(cfg, (gi, fi)=>{
+    const inp = area.querySelector(`.field-input[data-group="${gi}"][data-idx="${fi}"]`);
+    return inp ? inp.value.trim() : '';
+  });
+}
+
+function collectItemEntries(cfg, item){
+  return buildFieldEntriesFromValues(cfg, (gi, fi)=> item[`g${gi}_f${fi}`] || '');
+}
+
+function entriesToPlainRows(entriesList){
+  if(entriesList.length === 0) return [];
+  const header = entriesList[0].map(e=> e.candidates[0]);
+  const rows = entriesList.map(entries => entries.map(e=> e.value));
+  return [header, ...rows];
+}
+
+function matchEntriesToHeaders(headers, entries, extra){
+  return headers.map(h=>{
+    const norm = normalizeHeaderKey(h);
+    if(extra){
+      for(const k in extra){
+        if(normalizeHeaderKey(k) === norm) return extra[k];
+      }
+    }
+    const found = entries.find(e => e.candidates.some(c => normalizeHeaderKey(c) === norm));
+    return found ? found.value : '';
+  });
+}
+
 let googleTokenClient = null;
 let googleTokenClientId = null;
 let googleAccessToken = null;
@@ -456,13 +568,60 @@ async function exportRowsToGoogleSheet(rows, title){
   window.open(sheet.spreadsheetUrl, '_blank');
 }
 
-function wireGoogleSheetExportBtn(btn, getRows, title){
+/* 채널별로 지정된 gid 탭에 헤더 매칭 후 새 행으로 추가 */
+async function appendRowsToSheetTabByGid(spreadsheetId, gid, entriesList, extra){
+  const token = await getGoogleAccessToken();
+
+  const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, {
+    headers:{'Authorization':'Bearer ' + token}
+  });
+  if(!metaRes.ok) throw new Error('스프레드시트 정보 조회 실패: ' + (await metaRes.text()));
+  const metaJson = await metaRes.json();
+  const props = (metaJson.sheets || []).map(s=>s.properties).find(p=> String(p.sheetId) === String(gid));
+  if(!props) throw new Error(`gid=${gid}에 해당하는 탭을 찾을 수 없어. 설정에서 gid를 다시 확인해줘.`);
+  const sheetTitle = props.title;
+
+  const headerRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!1:1`,
+    { headers:{'Authorization':'Bearer ' + token} }
+  );
+  if(!headerRes.ok) throw new Error('헤더 행 조회 실패: ' + (await headerRes.text()));
+  const headerJson = await headerRes.json();
+  const headers = (headerJson.values && headerJson.values[0]) || [];
+  if(headers.length === 0){
+    throw new Error(`"${sheetTitle}" 탭에 헤더 행(1행)이 없어서 어느 열에 넣을지 알 수 없어. 첫 행에 열 제목을 채워줘.`);
+  }
+
+  const rows = entriesList.map(entries => matchEntriesToHeaders(headers, entries, extra));
+
+  const appendRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    {
+      method:'POST',
+      headers:{'Authorization':'Bearer ' + token, 'Content-Type':'application/json'},
+      body: JSON.stringify({ values: rows })
+    }
+  );
+  if(!appendRes.ok) throw new Error('시트에 행 추가 실패: ' + (await appendRes.text()));
+
+  window.open(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}`, '_blank');
+}
+
+function wireGoogleSheetExportBtn(btn, getEntriesList, title){
   btn.addEventListener('click', async ()=>{
     const orig = btn.textContent;
     btn.disabled = true;
     btn.textContent = '내보내는 중...';
     try{
-      await exportRowsToGoogleSheet(getRows(), title);
+      const entriesList = getEntriesList();
+      const gid = getSheetGidForChannel(currentChannel);
+      const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
+      if(gid && spreadsheetId){
+        const extra = { '날짜': new Date().toISOString().slice(0,10), '채널': CHANNELS[currentChannel].label };
+        await appendRowsToSheetTabByGid(spreadsheetId, gid, entriesList, extra);
+      }else{
+        await exportRowsToGoogleSheet(entriesToPlainRows(entriesList), title);
+      }
     }catch(e){
       alert(e.message || '구글 시트 내보내기 실패');
     }finally{
@@ -649,7 +808,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>[collectFormEntries(cfg)], `${cfg.label} 소재`);
     area.appendChild(exportBtn);
   }
 
@@ -684,7 +843,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateSimpleCopyRows(cfg), `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>[collectFormEntries(cfg)], `${cfg.label} 소재`);
     area.appendChild(exportBtn);
   }
 
@@ -719,7 +878,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>[collectFormEntries(cfg)], `${cfg.label} 소재`);
     area.appendChild(exportBtn);
   }
 
@@ -733,13 +892,18 @@ function renderForm(){
       area.appendChild(gt);
 
       group.fields.forEach((f, fi)=>{
-        const [label, limit] = f;
+        const [label, limit, opts] = f;
+        const multiline = !!(opts && opts.multiline);
         const row = document.createElement('div');
         row.className = 'field-row';
+        if(multiline) row.style.alignItems = 'flex-start';
         const showPx = PX_ENABLED_CHANNELS.includes(currentChannel) && label !== '소재명';
+        const inputHtml = multiline
+          ? `<textarea class="field-input" rows="5" style="resize:vertical; min-height:90px;" data-limit="${limit ?? ''}" data-unit="${cfg.unit}" data-group="${gi}" data-idx="${fi}" data-label="${label}"></textarea>`
+          : `<input type="text" class="field-input" data-limit="${limit ?? ''}" data-unit="${cfg.unit}" data-group="${gi}" data-idx="${fi}" data-label="${label}">`;
         row.innerHTML = `
           <div class="field-label">${label}${limit!=null ? ` (${limit}${cfg.unit==='byte'?'B':'자'})` : ''}</div>
-          <input type="text" class="field-input" data-limit="${limit ?? ''}" data-unit="${cfg.unit}" data-group="${gi}" data-idx="${fi}" data-label="${label}">
+          ${inputHtml}
           <div class="field-count">0${cfg.unit==='byte'?'B':'자'}</div>
           ${showPx ? '<div class="field-px">0px</div>' : ''}
         `;
@@ -779,7 +943,7 @@ function renderRepeatableForm(area, cfg){
   exportAllBtn.style.marginBottom = '10px';
   exportAllBtn.style.background = 'var(--mint)';
   exportAllBtn.textContent = '📄 전체 소재 구글 시트로 내보내기';
-  wireGoogleSheetExportBtn(exportAllBtn, ()=>generateRepeatableRows(cfg, items), `${cfg.label} 소재`);
+  wireGoogleSheetExportBtn(exportAllBtn, ()=>items.map(item=>collectItemEntries(cfg, item)), `${cfg.label} 소재`);
   area.appendChild(exportAllBtn);
 
   const itemsWrap = document.createElement('div');
@@ -881,18 +1045,6 @@ function renderRepeatableForm(area, cfg){
     });
   }
   renderItemsList();
-}
-
-function generateRepeatableRows(cfg, items){
-  const copyFields = cfg.groups[1].fields;
-  const header = ['소재명', ...copyFields.map(f=>f[0])];
-  const rows = [header];
-  items.forEach(item=>{
-    const 소재명 = item['g0_f0'] || '';
-    const vals = copyFields.map((f, fi)=> item[`g1_f${fi}`] || '');
-    rows.push([소재명, ...vals]);
-  });
-  return rows;
 }
 
 function getMaxWidthPx(label){
@@ -1607,6 +1759,11 @@ function tsvCell(value){
 document.getElementById('settingsBtn').addEventListener('click', ()=>{
   document.getElementById('apiKeyInput').value = localStorage.getItem('gemini_api_key') || '';
   document.getElementById('googleClientIdInput').value = localStorage.getItem('google_client_id') || '';
+  document.getElementById('sheetIdInput').value = localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID;
+  Object.keys(SHEET_GID_FIELD_MAP).forEach(fieldKey=>{
+    const stored = localStorage.getItem(`sheet_gid_${fieldKey}`);
+    document.getElementById(`sheetGid_${fieldKey}`).value = stored != null ? stored : (DEFAULT_SHEET_GIDS[fieldKey] || '');
+  });
   document.getElementById('apiKeyStatus').textContent = '';
   document.getElementById('settingsModal').style.display = 'flex';
 });
@@ -1619,6 +1776,7 @@ document.getElementById('settingsModal').addEventListener('click', (e)=>{
 document.getElementById('saveApiKeyBtn').addEventListener('click', ()=>{
   const val = document.getElementById('apiKeyInput').value.trim();
   const clientIdVal = document.getElementById('googleClientIdInput').value.trim();
+  const sheetIdVal = document.getElementById('sheetIdInput').value.trim();
   const status = document.getElementById('apiKeyStatus');
 
   if(!val) localStorage.removeItem('gemini_api_key');
@@ -1626,6 +1784,15 @@ document.getElementById('saveApiKeyBtn').addEventListener('click', ()=>{
 
   if(!clientIdVal) localStorage.removeItem('google_client_id');
   else localStorage.setItem('google_client_id', clientIdVal);
+
+  if(!sheetIdVal) localStorage.removeItem('google_spreadsheet_id');
+  else localStorage.setItem('google_spreadsheet_id', sheetIdVal);
+
+  Object.keys(SHEET_GID_FIELD_MAP).forEach(fieldKey=>{
+    const v = document.getElementById(`sheetGid_${fieldKey}`).value.trim();
+    if(!v) localStorage.removeItem(`sheet_gid_${fieldKey}`);
+    else localStorage.setItem(`sheet_gid_${fieldKey}`, v);
+  });
 
   status.textContent = '✓ 저장됨';
 });
