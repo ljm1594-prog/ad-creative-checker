@@ -624,7 +624,7 @@ function findInsertionPoint(colBValues, marker){
 }
 
 const SHEET_GAP_ROWS = 2; // 항목 사이에 띄우는 기본 빈 줄 수
-const SHEET_GAP_ROWS_OVERRIDE = { meta: 0 }; // 채널별로 다르게 띄우고 싶으면 여기서 재정의
+const SHEET_GAP_ROWS_OVERRIDE = { meta: 0, gfa: 0 }; // 채널별로 다르게 띄우고 싶으면 여기서 재정의
 
 function getSheetGapRowsForChannel(channelKey){
   for(const [fieldKey, channels] of Object.entries(SHEET_GID_FIELD_MAP)){
