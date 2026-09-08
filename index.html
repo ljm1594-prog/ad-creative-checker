@@ -1651,6 +1651,7 @@ function parseGdemandBulkPaste(lines){
 document.getElementById('formArea').addEventListener('paste', (e)=>{
   const target = e.target;
   if(!target.classList || !target.classList.contains('field-input')) return;
+  if(target.tagName === 'TEXTAREA') return; // 여러 줄 입력을 받는 필드는 붙여넣은 내용을 그대로 한 칸에 다 넣음 (다음 필드로 안 넘어감)
   const text = (e.clipboardData || window.clipboardData).getData('text');
   const lines = text.split(/\r\n|\r|\n/);
   // 마지막이 빈 줄이면 제거 (엑셀에서 복사할 때 흔히 붙는 후행 개행)
