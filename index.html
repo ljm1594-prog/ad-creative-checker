@@ -738,8 +738,9 @@ function buildBizboardMergeRequests(sheetId, insertRow0, rows){
    배경색/테두리까지 이미 다 직접 지정하는 경우, "밀려난 원래 항목"에서 서식(+병합 상태)을 그대로 복사해오면
    그 원래 항목의 병합 범위가 새로 들어간 행 개수와 다를 때 병합 경계가 어긋나면서 바로 아래 있던 기존
    블록까지 같이 깨지는 문제가 있었음(항목 개수가 매번 달라지는 GFA 통합 표에서 실제로 발생) */
-async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, skipFormatCopy, forceInsertAtTop){
+async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, skipFormatCopy, forceInsertAtTop, leadingBlankRows){
   if(gapRows == null) gapRows = SHEET_GAP_ROWS;
+  if(leadingBlankRows == null) leadingBlankRows = 0;
   const token = await getGoogleAccessToken();
 
   const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, {
@@ -755,8 +756,11 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   // forceInsertAtTop이면 기존 내용에서 "행사명" 글자를 찾지 않고 무조건 맨 위(0행)에 새로 삽입 —
   // 탭에 이미 있던 글자를 마커로 찾아 그 자리에 끼워 넣는 방식은, 탭 구조가 예상과 다르면(예: 헤더가
   // 맨 위가 아니거나 여러 개 있으면) 엉뚱한 위치에 꽂히는 문제가 있어서, GFA 통합 내보내기는 아예
-  // 매번 새 제목+헤더+데이터를 맨 위에 통째로 새로 만들어 넣는 방식으로 바꿈
-  const insertRow0 = forceInsertAtTop ? 0 : findInsertionPoint(await getColumnBValues(token, spreadsheetId, sheetTitle), headerMarker);
+  // 매번 새 제목+헤더+데이터를 맨 위에 통째로 새로 만들어 넣는 방식으로 바꿈.
+  // leadingBlankRows가 있으면 그 삽입 지점(insertStart0)과 실제 제목행이 시작되는 자리(insertRow0)가
+  // 갈라짐 — 그 사이(insertStart0~insertRow0)는 빈 여백 행으로 남음
+  const insertStart0 = forceInsertAtTop ? 0 : findInsertionPoint(await getColumnBValues(token, spreadsheetId, sheetTitle), headerMarker);
+  const insertRow0 = insertStart0 + leadingBlankRows;
 
   // 실제 들어갈 행 번호를 알아야만 만들 수 있는 값(예: =LEN(C12) 같은 수식)이 있으면 여기서 교체
   if(transformRows) rows = transformRows(rows, insertRow0);
@@ -764,10 +768,10 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   const startCol0 = 1; // B열부터 (A열은 항상 빈 여백 칸)
   const maxCols = Math.max(1, ...rows.map(r => r.length));
   const endCol0 = startCol0 + maxCols;
-  const totalInsertCount = rows.length + gapRows;
+  const totalInsertCount = leadingBlankRows + rows.length + gapRows;
 
-  // 1) 새 데이터 + 구분용 빈 줄만큼 빈 행을 삽입 → 기존 내용 전체가 그만큼 아래로 밀림
-  await insertBlankRows(token, spreadsheetId, sheetId, insertRow0, totalInsertCount);
+  // 1) 여백 행 + 새 데이터 + 구분용 빈 줄만큼 빈 행을 삽입 → 기존 내용 전체가 그만큼 아래로 밀림
+  await insertBlankRows(token, spreadsheetId, sheetId, insertStart0, totalInsertCount);
 
   // 2) 삽입된 빈 행 중 앞부분(rows.length개)에 값 쓰기
   const startColLetter = indexToColLetter(startCol0);
@@ -788,7 +792,7 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   //    실패해도 값은 이미 반영됐으니 여기서 던지지 않고 콘솔에만 남김.
   if(!skipFormatCopy){
     try{
-      const sourceStart0 = insertRow0 + totalInsertCount;
+      const sourceStart0 = insertStart0 + totalInsertCount;
       const sourceEnd0 = sourceStart0 + rows.length;
       await copyCellFormat(token, spreadsheetId, sheetId,
         { startRowIndex: sourceStart0, endRowIndex: sourceEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
@@ -1653,7 +1657,7 @@ async function runGfaCombinedExport(btn){
     const buildCombinedRequests = (sheetId, insertRow0) =>
       buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows, shoppingRows);
 
-    await appendRowsToSheetTabByGid(spreadsheetId, gid, combinedRows, buildCombinedRequests, null, null, gapRows, true, true);
+    await appendRowsToSheetTabByGid(spreadsheetId, gid, combinedRows, buildCombinedRequests, null, null, gapRows, true, true, 2);
     btn.textContent = '완료!';
     setTimeout(()=>{ btn.textContent = orig; }, 1200);
   }catch(e){
