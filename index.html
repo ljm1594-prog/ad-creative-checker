@@ -821,7 +821,7 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   }
 }
 
-function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, transformRows, forceInsertAtTop, leadingBlankRows){
+function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, transformRows, forceInsertAtTop, leadingBlankRows, skipFormatCopy){
   btn.addEventListener('click', async ()=>{
     const orig = btn.textContent;
     btn.disabled = true;
@@ -833,7 +833,7 @@ function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, trans
       const gapRows = getSheetGapRowsForChannel(currentChannel);
       const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
       if(gid && spreadsheetId){
-        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, false, forceInsertAtTop, leadingBlankRows);
+        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, !!skipFormatCopy, forceInsertAtTop, leadingBlankRows);
       }else{
         await exportRowsToGoogleSheet(rows, title);
       }
@@ -1119,7 +1119,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, buildGdemandFormatRequests, null, true, 2);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, buildGdemandFormatRequests, null, true, 2, true);
     area.appendChild(exportBtn);
   }
 
@@ -2006,16 +2006,35 @@ function generateSimpleCopyLine(cfg){
   return generateSimpleCopyRows(cfg)[0].join('\t');
 }
 
-/* 구글 디맨드젠 내보내기 서식 — 제목행(행사명) B열이 시트의 기존 가운데 정렬을 물려받는 문제가 있어서
-   왼쪽 정렬로 명시적으로 고정 */
-function buildGdemandFormatRequests(sheetId, insertRow0){
-  return [{
-    repeatCell:{
-      range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 2 },
-      cell:{ userEnteredFormat:{ horizontalAlignment: 'LEFT' } },
-      fields:'userEnteredFormat.horizontalAlignment'
+/* 구글 디맨드젠 내보내기 서식 — 삽입된 새 행들이 그 자리에 밀려나기 전 있던 내용의 배경색(주황/회색
+   얼룩 등)을 그대로 물려받는 문제가 있어서, 전체 배경을 흰색으로 명시적으로 리셋한 다음 제목행만
+   파란색+왼쪽정렬, 그룹명 라벨(텍스트/광고 제목/설명/업체명/최종도착URL) 칸만 굵게 다시 칠함 */
+function buildGdemandFormatRequests(sheetId, insertRow0, rows){
+  const WHITE = { red:1, green:1, blue:1 };
+  const BLUE = { red:0x42/255, green:0x85/255, blue:0xf4/255 }; // #4285F4, 구글 디맨드젠 포인트 컬러
+  const requests = [
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + rows.length, startColumnIndex: 1, endColumnIndex: 5 },
+        cell:{ userEnteredFormat:{ backgroundColor: WHITE, textFormat:{ bold:false } } },
+        fields:'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.bold'
+    }},
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 2 },
+        cell:{ userEnteredFormat:{ backgroundColor: BLUE, horizontalAlignment:'LEFT' } },
+        fields:'userEnteredFormat.backgroundColor,userEnteredFormat.horizontalAlignment'
+    }}
+  ];
+  // 각 그룹의 첫 행(=라벨이 채워진 행, 예: "텍스트"/"광고 제목 (최대 5개)"/"업체명")만 굵게
+  rows.forEach((row, i)=>{
+    if(i >= 2 && row[0]){
+      requests.push({ repeatCell:{
+          range:{ sheetId, startRowIndex: insertRow0 + i, endRowIndex: insertRow0 + i + 1, startColumnIndex: 1, endColumnIndex: 2 },
+          cell:{ userEnteredFormat:{ textFormat:{ bold:true } } },
+          fields:'userEnteredFormat.textFormat.bold'
+      }});
     }
-  }];
+  });
+  return requests;
 }
 
 /* 구글 디맨드젠 기획표 형식 복사 (붙여넣기 파서와 정확히 대응되는 라운드트립 포맷) */
