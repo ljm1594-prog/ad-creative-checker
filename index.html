@@ -821,7 +821,7 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   }
 }
 
-function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, transformRows){
+function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, transformRows, forceInsertAtTop, leadingBlankRows){
   btn.addEventListener('click', async ()=>{
     const orig = btn.textContent;
     btn.disabled = true;
@@ -833,7 +833,7 @@ function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, trans
       const gapRows = getSheetGapRowsForChannel(currentChannel);
       const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
       if(gid && spreadsheetId){
-        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows);
+        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, false, forceInsertAtTop, leadingBlankRows);
       }else{
         await exportRowsToGoogleSheet(rows, title);
       }
@@ -1119,7 +1119,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, null, null, true, 2);
     area.appendChild(exportBtn);
   }
 
