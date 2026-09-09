@@ -1235,8 +1235,8 @@ function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows,
     }},
     { repeatCell:{
         range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 2 },
-        cell:{ userEnteredFormat:{ backgroundColor: TITLE_PEACH } },
-        fields:'userEnteredFormat.backgroundColor'
+        cell:{ userEnteredFormat:{ backgroundColor: TITLE_PEACH, textFormat:{ bold:true } } },
+        fields:'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat'
     }},
     // 제목행은 표 테두리 밖에 있어야 하므로, 혹시 남아있을 테두리를 명시적으로 지움
     { updateBorders:{
