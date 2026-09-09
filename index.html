@@ -1212,8 +1212,9 @@ function generateGfaCombinedDataRows(){
   return { feedRows, smartRows, shoppingRows };
 }
 
-/* GFA 내보내기 서식 — 제목행은 흰 배경, 헤더행은 남색+흰 굵은 글씨, 데이터 행은 흰 배경,
-   행사명은 데이터 행 전체 병합, 구좌는 피드/스마트채널/쇼핑소식 구간별로 병합, 표 전체에 격자 테두리 */
+/* GFA 내보내기 서식 — 제목행은 흰 배경(B열만 #fce5cd 하이라이트, 테두리 없음), 헤더행은 남색+흰 굵은 글씨,
+   데이터 행은 흰 배경, 행사명은 데이터 행 전체 병합, 구좌는 피드/스마트채널/쇼핑소식 구간별로 병합,
+   헤더행부터 데이터 끝까지만 격자 테두리(제목행은 테두리 밖) */
 function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows, shoppingRows){
   const feedCount = feedRows.length, smartCount = smartRows.length, shoppingCount = shoppingRows.length;
   const totalDataRows = feedCount + smartCount + shoppingCount;
@@ -1221,7 +1222,9 @@ function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows,
   const dataEnd0 = dataStart0 + totalDataRows;
   const WHITE = { red:1, green:1, blue:1 };
   const NAVY = { red:0x1B/255, green:0x1F/255, blue:0x3B/255 };
+  const TITLE_PEACH = { red:0xfc/255, green:0xe5/255, blue:0xcd/255 }; // #fce5cd
   const BORDER = { style:'SOLID', width:1, color:{ red:0, green:0, blue:0 } };
+  const NO_BORDER = { style:'NONE' };
   const startCol0 = 1, endCol0 = 5; // B~E
 
   const requests = [
@@ -1229,6 +1232,16 @@ function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows,
         range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: startCol0, endColumnIndex: endCol0 },
         cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
         fields:'userEnteredFormat.backgroundColor'
+    }},
+    { repeatCell:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 2 },
+        cell:{ userEnteredFormat:{ backgroundColor: TITLE_PEACH } },
+        fields:'userEnteredFormat.backgroundColor'
+    }},
+    // 제목행은 표 테두리 밖에 있어야 하므로, 혹시 남아있을 테두리를 명시적으로 지움
+    { updateBorders:{
+        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+        top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER, innerHorizontal: NO_BORDER, innerVertical: NO_BORDER
     }},
     { repeatCell:{
         range:{ sheetId, startRowIndex: insertRow0 + 1, endRowIndex: insertRow0 + 2, startColumnIndex: startCol0, endColumnIndex: endCol0 },
@@ -1241,7 +1254,7 @@ function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows,
         fields:'userEnteredFormat.backgroundColor'
     }},
     { updateBorders:{
-        range:{ sheetId, startRowIndex: insertRow0, endRowIndex: dataEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
+        range:{ sheetId, startRowIndex: insertRow0 + 1, endRowIndex: dataEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
         top: BORDER, bottom: BORDER, left: BORDER, right: BORDER, innerHorizontal: BORDER, innerVertical: BORDER
     }}
   ];
