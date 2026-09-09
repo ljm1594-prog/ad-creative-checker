@@ -398,7 +398,7 @@ const CHANNELS = {
   gdemand: {
     label:'구글 디맨드젠', unit:'byte', dotColor:'#4285F4', dotText:'G', gdemandCopyFormat:true,
     groups:[
-      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'소재 정보', fields:[['행사명', null]]},
       {name:'광고 제목 (최대 5개)', fields:[['제목1',90],['제목2',90],['제목3',90],['제목4',90],['제목5',90]]},
       {name:'설명 (최대 5개)', fields:[['설명1',90],['설명2',90],['설명3',90],['설명4',90],['설명5',90]]},
       {name:'업체명', fields:[['업체명',24]]},
@@ -427,7 +427,7 @@ function byteLen(str){
    새 행을 이어붙임(append) — 팀이 그동안 복사→붙여넣기 해온 시트 포맷을 그대로 재현.
    gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
 const DEFAULT_GOOGLE_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
-const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219' };
+const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109' };
 const SHEET_GID_FIELD_MAP = {
   brand: ['brand_video', 'brand_image'],
   bizboard: ['bizboard'],
@@ -2220,7 +2220,7 @@ function handleFileChange(e){
    실제 필드에는 값 한 칸만 필요하므로 그룹명/글자수 칸은 걸러내고 값만 순서대로 뽑아낸다.
    "이미지 - 단컷"처럼 텍스트 필드가 아닌 안내 행은 자리 자체를 건너뛴다. */
 const GDEMAND_SKIP_ROW_LABELS = ['텍스트'];
-const GDEMAND_GROUP_LABELS = ['소재 정보','소재명','광고 제목 (최대 5개)','설명 (최대 5개)','업체명','최종도착URL'];
+const GDEMAND_GROUP_LABELS = ['소재 정보','소재명','행사명','광고 제목 (최대 5개)','설명 (최대 5개)','업체명','최종도착URL'];
 const GDEMAND_COUNT_PATTERN = /^\d*\s*\/\s*\d+\s*(byte|자|B)\s*$/i;
 function parseGdemandBulkPaste(lines){
   const values = [];
