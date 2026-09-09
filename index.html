@@ -738,7 +738,7 @@ function buildBizboardMergeRequests(sheetId, insertRow0, rows){
    배경색/테두리까지 이미 다 직접 지정하는 경우, "밀려난 원래 항목"에서 서식(+병합 상태)을 그대로 복사해오면
    그 원래 항목의 병합 범위가 새로 들어간 행 개수와 다를 때 병합 경계가 어긋나면서 바로 아래 있던 기존
    블록까지 같이 깨지는 문제가 있었음(항목 개수가 매번 달라지는 GFA 통합 표에서 실제로 발생) */
-async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, skipFormatCopy){
+async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, skipFormatCopy, forceInsertAtTop){
   if(gapRows == null) gapRows = SHEET_GAP_ROWS;
   const token = await getGoogleAccessToken();
 
@@ -752,11 +752,11 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   const sheetTitle = props.title;
   const sheetId = props.sheetId;
 
-  const colB = await getColumnBValues(token, spreadsheetId, sheetTitle);
-  const insertRow0 = findInsertionPoint(colB, headerMarker); // 기존 맨 위 항목이 시작되던 자리 = 새 항목이 들어갈 자리
-  console.log('[GFA DEBUG] sheetTitle=', sheetTitle, 'headerMarker=', JSON.stringify(headerMarker), 'colB.length=', colB.length, 'insertRow0=', insertRow0, 'rows.length=', rows.length, 'gapRows=', gapRows);
-  console.log('[GFA DEBUG] colB near insertRow0(-2..+3):', colB.slice(Math.max(0,insertRow0-2), insertRow0+3).map((v,i)=>`row${Math.max(0,insertRow0-2)+i+1}=${JSON.stringify(v)}`));
-  console.log('[GFA DEBUG] rows being written:', JSON.stringify(rows));
+  // forceInsertAtTop이면 기존 내용에서 "행사명" 글자를 찾지 않고 무조건 맨 위(0행)에 새로 삽입 —
+  // 탭에 이미 있던 글자를 마커로 찾아 그 자리에 끼워 넣는 방식은, 탭 구조가 예상과 다르면(예: 헤더가
+  // 맨 위가 아니거나 여러 개 있으면) 엉뚱한 위치에 꽂히는 문제가 있어서, GFA 통합 내보내기는 아예
+  // 매번 새 제목+헤더+데이터를 맨 위에 통째로 새로 만들어 넣는 방식으로 바꿈
+  const insertRow0 = forceInsertAtTop ? 0 : findInsertionPoint(await getColumnBValues(token, spreadsheetId, sheetTitle), headerMarker);
 
   // 실제 들어갈 행 번호를 알아야만 만들 수 있는 값(예: =LEN(C12) 같은 수식)이 있으면 여기서 교체
   if(transformRows) rows = transformRows(rows, insertRow0);
@@ -1215,7 +1215,6 @@ function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows,
   const totalDataRows = feedCount + smartCount + shoppingCount;
   const dataStart0 = insertRow0 + 2; // 제목행+헤더행 다음부터
   const dataEnd0 = dataStart0 + totalDataRows;
-  console.log('[GFA DEBUG] insertRow0=', insertRow0, 'feedCount=', feedCount, 'smartCount=', smartCount, 'shoppingCount=', shoppingCount, 'dataStart0=', dataStart0, 'dataEnd0=', dataEnd0);
   const WHITE = { red:1, green:1, blue:1 };
   const NAVY = { red:0x1B/255, green:0x1F/255, blue:0x3B/255 };
   const BORDER = { style:'SOLID', width:1, color:{ red:0, green:0, blue:0 } };
@@ -1622,17 +1621,17 @@ async function runGfaSectionReview(key, label, btn){
   }
 }
 
-/* 피드 → 스마트채널 → 쇼핑소식 순서로 한 번에 합쳐서 내보냄 (창은 새로 열지 않음) */
-/* 세 블록(피드/스마트채널/쇼핑소식)을 한 번의 삽입으로 합쳐서 넣음 — 따로따로 3번 호출하면, 각 블록에도
-   "행사명" 헤더가 있어서 두 번째/세 번째 삽입이 "탭에서 제일 위의 행사명"을 찾다가 방금 넣은 이전
-   블록의 헤더를 잘못 찾아 그 블록 한가운데 끼어드는 문제가 있었음. 한 번에 합쳐 넣으면 그 문제가 없음 */
+/* 피드 → 스마트채널 → 쇼핑소식 순서로 한 번에 합쳐서 내보냄 (창은 새로 열지 않음).
+   탭에 있는 "행사명" 글자를 찾아 그 자리에 끼워 넣는 방식(다른 채널들)이 아니라, 매번 새 제목+헤더+
+   데이터를 통째로 새로 만들어서 무조건 탭 맨 위(1행)에 꽂고 기존 내용은 전부 아래로 미룸 —
+   탭 안에 이미 있는 글자를 마커로 찾는 방식은 탭 구조가 예상과 다르면 엉뚱한 위치에 꽂히는
+   문제가 있었음 */
 async function runGfaCombinedExport(btn){
   const orig = btn.textContent;
   btn.disabled = true;
   btn.textContent = '내보내는 중...';
   try{
     const gid = getSheetGidForChannel('gfa_smart');
-    const headerMarker = getSheetHeaderMarkerForChannel('gfa_smart');
     const gapRows = getSheetGapRowsForChannel('gfa_smart');
     const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
 
@@ -1654,7 +1653,7 @@ async function runGfaCombinedExport(btn){
     const buildCombinedRequests = (sheetId, insertRow0) =>
       buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows, shoppingRows);
 
-    await appendRowsToSheetTabByGid(spreadsheetId, gid, combinedRows, buildCombinedRequests, null, headerMarker, gapRows, true);
+    await appendRowsToSheetTabByGid(spreadsheetId, gid, combinedRows, buildCombinedRequests, null, null, gapRows, true, true);
     btn.textContent = '완료!';
     setTimeout(()=>{ btn.textContent = orig; }, 1200);
   }catch(e){
