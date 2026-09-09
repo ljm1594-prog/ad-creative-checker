@@ -754,6 +754,9 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
 
   const colB = await getColumnBValues(token, spreadsheetId, sheetTitle);
   const insertRow0 = findInsertionPoint(colB, headerMarker); // 기존 맨 위 항목이 시작되던 자리 = 새 항목이 들어갈 자리
+  console.log('[GFA DEBUG] sheetTitle=', sheetTitle, 'headerMarker=', JSON.stringify(headerMarker), 'colB.length=', colB.length, 'insertRow0=', insertRow0, 'rows.length=', rows.length, 'gapRows=', gapRows);
+  console.log('[GFA DEBUG] colB near insertRow0(-2..+3):', colB.slice(Math.max(0,insertRow0-2), insertRow0+3).map((v,i)=>`row${Math.max(0,insertRow0-2)+i+1}=${JSON.stringify(v)}`));
+  console.log('[GFA DEBUG] rows being written:', JSON.stringify(rows));
 
   // 실제 들어갈 행 번호를 알아야만 만들 수 있는 값(예: =LEN(C12) 같은 수식)이 있으면 여기서 교체
   if(transformRows) rows = transformRows(rows, insertRow0);
@@ -1212,6 +1215,7 @@ function buildGfaCombinedTableRequests(sheetId, insertRow0, feedRows, smartRows,
   const totalDataRows = feedCount + smartCount + shoppingCount;
   const dataStart0 = insertRow0 + 2; // 제목행+헤더행 다음부터
   const dataEnd0 = dataStart0 + totalDataRows;
+  console.log('[GFA DEBUG] insertRow0=', insertRow0, 'feedCount=', feedCount, 'smartCount=', smartCount, 'shoppingCount=', shoppingCount, 'dataStart0=', dataStart0, 'dataEnd0=', dataEnd0);
   const WHITE = { red:1, green:1, blue:1 };
   const NAVY = { red:0x1B/255, green:0x1F/255, blue:0x3B/255 };
   const BORDER = { style:'SOLID', width:1, color:{ red:0, green:0, blue:0 } };
