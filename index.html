@@ -1119,7 +1119,7 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, null, null, true, 2);
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, buildGdemandFormatRequests, null, true, 2);
     area.appendChild(exportBtn);
   }
 
@@ -2004,6 +2004,18 @@ function generateSimpleCopyRows(cfg){
 
 function generateSimpleCopyLine(cfg){
   return generateSimpleCopyRows(cfg)[0].join('\t');
+}
+
+/* 구글 디맨드젠 내보내기 서식 — 제목행(행사명) B열이 시트의 기존 가운데 정렬을 물려받는 문제가 있어서
+   왼쪽 정렬로 명시적으로 고정 */
+function buildGdemandFormatRequests(sheetId, insertRow0){
+  return [{
+    repeatCell:{
+      range:{ sheetId, startRowIndex: insertRow0, endRowIndex: insertRow0 + 1, startColumnIndex: 1, endColumnIndex: 2 },
+      cell:{ userEnteredFormat:{ horizontalAlignment: 'LEFT' } },
+      fields:'userEnteredFormat.horizontalAlignment'
+    }
+  }];
 }
 
 /* 구글 디맨드젠 기획표 형식 복사 (붙여넣기 파서와 정확히 대응되는 라운드트립 포맷) */
