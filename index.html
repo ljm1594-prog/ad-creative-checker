@@ -317,7 +317,7 @@
     <div class="sheet-map-row"><div class="field-label">GFA(피드/스마트채널/쇼핑소식)</div><input type="text" id="sheetGid_gfa" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">구글 디맨드젠</div><input type="text" id="sheetGid_gdemand" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">메타</div><input type="text" id="sheetGid_meta" class="field-input" placeholder="gid"></div>
-    <div class="sheet-map-row"><div class="field-label">네이버 밴드(새소식/밴드홈/내밴드목록/스티커)</div><input type="text" id="sheetGid_band" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">네이버 밴드(새소식/밴드홈/내밴드목록)</div><input type="text" id="sheetGid_band" class="field-input" placeholder="gid"></div>
     <button class="submit-btn" id="saveApiKeyBtn" style="margin-top:12px;">저장</button>
     <div id="apiKeyStatus" style="text-align:center; font-size:12px; color:var(--mint); margin-top:8px; min-height:16px;"></div>
   </div>
@@ -335,7 +335,6 @@ const BAND_LIMITS = {
   newsAction:  { title: 14, body: 24 },  // 새소식 + 액션 이미지: 카드가 좁아져 더 짧아짐
   home:        { title: 40 },            // 밴드홈 커버: 두줄 제목
   list:        { body: 60 },             // 내 밴드목록: 내용 3줄
-  sticker:     { title: 20, body: 40 }   // 스티커 보상형: 제목 1줄 / 내용 2줄
 };
 
 /* ---------------- 채널 정의 ---------------- */
@@ -451,16 +450,6 @@ const CHANNELS = {
     spec:{sizes:[[640,354]], minKB:0, maxKB:10240},
     specHint:'대표이미지 640×354px · JPG/JPEG/PNG · 10MB 이하',
     note:'내용 3줄 노출 — 넘치면 말줄임(...) 처리 · 제목 없이 대표이미지 + 내용 + 밴드/페이지 커버·이름으로 구성 · 대표이미지 외곽 전체 테두리, 이미지와 문구 사이 구분 띠 사용 불가 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수 제한은 가이드에 숫자가 없어 앱에서 별도로 걸지 않음(파트너센터 입력창 자체 한도를 따름) — 노출 줄 수를 넘으면 말줄임 처리되니 줄 수 기준으로 길이 가늠'
-  },
-  band_sticker: {
-    label:'밴드 스티커 보상형', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
-    groups:[
-      {name:'소재 정보', fields:[['소재명', null]]},
-      {name:'카피', fields:[['제목', null],['내용', null]]}
-    ],
-    spec:{sizes:[[300,300]], minKB:0, maxKB:10240},
-    specHint:'대표이미지 300×300px · JPG/JPEG/PNG · 10MB 이하',
-    note:'제목 1줄 / 내용 최대 2줄 노출 — 넘치면 말줄임(...) 처리 · 과업 버튼("밴드 가입"/"페이지 구독")과 밴드명은 자동 노출이라 입력 불필요 · 광고 목적이 명확한 사업자 광고주만 집행 가능 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수 제한은 가이드에 숫자가 없어 앱에서 별도로 걸지 않음(파트너센터 입력창 자체 한도를 따름) — 노출 줄 수를 넘으면 말줄임 처리되니 줄 수 기준으로 길이 가늠'
   }
 };
 
@@ -488,7 +477,7 @@ const SHEET_GID_FIELD_MAP = {
   gfa: ['gfa_feed', 'gfa_smart', 'gfa_shopping'],
   gdemand: ['gdemand'],
   meta: ['meta'],
-  band: ['band_news', 'band_home', 'band_list', 'band_sticker']
+  band: ['band_news', 'band_home', 'band_list']
 };
 
 function getSheetGidForChannel(channelKey){
@@ -2551,7 +2540,7 @@ const SYSTEM_PROMPT = `
 [GFA 스마트채널] 투명배경/누끼 여부는 이미 코드가 정확히 측정해서 별도로 issues에 추가하니 너는 절대 언급하지 마. 메인문구 1행/2행, 서브문구 1행 작성 시 여러 배너 크기(750×280/750×200/750×160)에서 동시 노출되므로 가장 작은 배너에서도 잘리지 않는지, 첫 줄/마지막 줄이 가려지지 않는지 확인
 [GFA 쇼핑소식] 이미지에 별도로 합성/삽입된 브랜드 로고나 워터마크가 보이면 반려. 단, 제품 본체에 원래 있는 로고는 문제 없음. 투명/반투명 배경 여부는 이미 코드가 정확히 측정해서 별도로 issues에 추가하니 너는 절대 언급하지 마
 
-[네이버 밴드 (새소식 / 밴드홈 커버 / 내 밴드목록 / 스티커 보상형)]
+[네이버 밴드 (새소식 / 밴드홈 커버 / 내 밴드목록)]
 - 근거: 밴드 소셜광고 광고집행가이드 v8.0 + 실제 반려 사례(사용자 제공, 2026-10-26). 아래 중 "기계적으로 확정 가능한 것"(이모지, 전화번호, 가격 표기, 할인 표현, 최상급 표현, 밴드 공인 오인 문구, 금지 신조어, 명품+판매 표현, 이벤트 표기 누락, 고정 시간/일자 압박 표현, 근거 확인 어려운 수치 주장, 문구 중복)은 이미 코드가 정확히 검사해서 issues에 넣으니 너는 중복으로 만들지 마 (특히 "오늘", "60분 한정", "종료까지", "○만 명이 선택" 류를 네가 또 지적하지 말 것)
 - 네가 판단할 것은 이미지와 "맥락"이야:
   · 대표이미지/액션이미지가 광고 대상 밴드 콘텐츠·랜딩 내용과 무관해 보이면 반려
