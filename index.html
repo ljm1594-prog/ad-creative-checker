@@ -1086,23 +1086,14 @@ function renderForm(){
   const area = document.getElementById('formArea');
   area.innerHTML = '';
 
-  if(cfg.note){
+  // 밴드 채널은 note-box(파란색)와 랜딩 체크리스트 박스(빨간색)가 화면을 너무 차지해서 사용자 요청으로
+  // 제거함(2026-10-26) — 내용 자체(이모지 금지, 최상급 표현 금지, 랜딩 게시글 요건 등)는
+  // checkBandCopyIssues/SYSTEM_PROMPT/BAND_LANDING_CHECKLIST에 그대로 남아있고 검수 요청 시 issues로 뜸.
+  if(cfg.note && !cfg.bandPolicy){
     const n = document.createElement('div');
     n.className = 'note-box';
     n.textContent = '* ' + cfg.note;
     area.appendChild(n);
-  }
-
-  // 밴드 채널은 "게시글(랜딩) 요건 누락"이 실제 반려 사유 중 압도적으로 많이 반복됐는데, 이건 소재
-  // 텍스트가 아니라 게시글 내용이라 앱이 자동으로 확인할 방법이 없음 — 그래서 매번 눈에 띄는 별도
-  // 체크리스트 박스로 띄워서 제출 전에 사람이 직접 확인하도록 함(일반 note-box와 색을 다르게 해서 구분)
-  if(cfg.bandPolicy){
-    const cl = document.createElement('div');
-    cl.className = 'note-box';
-    cl.style.cssText = 'background:var(--red-soft); color:#B3433D; margin-bottom:14px; font-weight:600;';
-    cl.innerHTML = '⚠ 랜딩 게시글 체크리스트(소재와 별개로 반려의 가장 흔한 원인) — 통신판매업/사업자 정보/판매자 정보/운영정책 문구 4종을 게시글에 넣었는지 직접 확인:<br>' +
-      BAND_LANDING_CHECKLIST.map(item=>`· ${item}`).join('<br>');
-    area.appendChild(cl);
   }
 
   if(cfg.brandCopyFormat){
