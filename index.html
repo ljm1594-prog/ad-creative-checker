@@ -422,7 +422,7 @@ const CHANNELS = {
     note:'짧은/긴 광고 제목에 느낌표·기호·구두점 사용 불가, 영어 대문자 연속 사용 불가'
   },
   band_news: {
-    label:'밴드 새소식', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    label:'밴드 새소식', unit:'char', dotColor:'#00C73C', dotText:'B', bandCopyFormat:true, bandPolicy:true,
     groups:[
       {name:'소재 정보', fields:[['소재명', null]]},
       {name:'카피', fields:[['제목', null],['내용', null]]}
@@ -432,7 +432,7 @@ const CHANNELS = {
     note:'제목 1줄 / 내용 최대 2줄 노출 — 넘치면 말줄임(...) 처리 · 액션 이미지를 추가하면 제목·내용 최대 입력 글자수가 더 줄어듦 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수 제한은 가이드에 숫자가 없어 앱에서 별도로 걸지 않음(파트너센터 입력창 자체 한도를 따름) — 노출 줄 수를 넘으면 말줄임 처리되니 줄 수 기준으로 길이 가늠'
   },
   band_home: {
-    label:'밴드홈 커버', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    label:'밴드홈 커버', unit:'char', dotColor:'#00C73C', dotText:'B', bandCopyFormat:true, bandPolicy:true,
     groups:[
       {name:'소재 정보', fields:[['소재명', null]]},
       {name:'카피', fields:[['두줄 제목', null, {multiline:true}]]}
@@ -442,7 +442,7 @@ const CHANNELS = {
     note:'두줄 제목은 줄바꿈이 그대로 적용되어 2줄 노출 — 넘치면 말줄임(...) 처리 · 대표이미지 외곽 전체 테두리, 이미지와 제목 사이 구분 띠 사용 불가 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수 제한은 가이드에 숫자가 없어 앱에서 별도로 걸지 않음(파트너센터 입력창 자체 한도를 따름) — 노출 줄 수를 넘으면 말줄임 처리되니 줄 수 기준으로 길이 가늠'
   },
   band_list: {
-    label:'내 밴드목록', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    label:'내 밴드목록', unit:'char', dotColor:'#00C73C', dotText:'B', bandCopyFormat:true, bandPolicy:true,
     groups:[
       {name:'소재 정보', fields:[['소재명', null]]},
       {name:'카피', fields:[['내용', null, {multiline:true}]]}
@@ -1157,6 +1157,44 @@ function renderForm(){
     exportBtn.textContent = '📄 구글 시트로 내보내기';
     wireGoogleSheetExportBtn(exportBtn, ()=>generateSimpleCopyRows(cfg), `${cfg.label} 소재`, null,
       currentChannel === 'meta' ? (rows)=>applyMetaColumnLayout(rows) : null);
+    area.appendChild(exportBtn);
+  }
+
+  if(cfg.bandCopyFormat){
+    // 밴드는 다른 채널과 달리 소재명/제목/내용을 각각 셀로 나누지 않고, 소재명 한 칸 + 카피(제목+내용을
+    // 줄바꿈으로 합친 것) 한 칸, 총 2칸으로 복사함 — 팀이 엑셀에 이 형식으로 붙여넣어 쓰고 있어서
+    // 거기 맞춤(예: "price-115" [tab] "음식물처리기 싸게드려요~\n10/14(수) 한정 더블 할인!")
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'apply-bulk-btn';
+    copyBtn.style.marginBottom = '14px';
+    copyBtn.textContent = '📋 복사';
+    copyBtn.addEventListener('click', async ()=>{
+      const text = generateBandCopyLine(cfg);
+      const orig = copyBtn.textContent;
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = '✓ 복사됨';
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyBtn.textContent = '✓ 복사됨';
+      }
+      setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
+    });
+    area.appendChild(copyBtn);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'apply-bulk-btn';
+    exportBtn.style.marginBottom = '14px';
+    exportBtn.style.background = 'var(--mint)';
+    exportBtn.textContent = '📄 구글 시트로 내보내기';
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateBandCopyRows(cfg), `${cfg.label} 소재`, null, null);
     area.appendChild(exportBtn);
   }
 
@@ -2080,6 +2118,25 @@ function generateSimpleCopyRows(cfg){
 
 function generateSimpleCopyLine(cfg){
   return generateSimpleCopyRows(cfg)[0].join('\t');
+}
+
+/* 밴드 소재 복사 형식 — 소재명 한 칸 + 카피(제목/내용 등)를 줄바꿈으로 합친 한 칸, 총 2칸.
+   예: price-115 [tab] "음식물처리기 싸게드려요~\n10/14(수) 한정 더블 할인!"
+   엑셀에 탭으로 붙여넣으면 소재명/카피가 각각 셀에 들어가고, 카피 셀 안에서는 줄바꿈이 유지됨
+   (tsvCell이 줄바꿈 포함 값을 큰따옴표로 감싸주기 때문에 엑셀이 한 셀로 인식함). */
+function generateBandCopyRows(cfg){
+  const area = document.getElementById('formArea');
+  const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
+  const copyIdx = cfg.groups.findIndex(g=>g.name === '카피');
+  const metaVals = metaIdx>=0 ? collectGroupValues(area, metaIdx, cfg.groups[metaIdx].fields) : [];
+  const copyVals = copyIdx>=0 ? collectGroupValues(area, copyIdx, cfg.groups[copyIdx].fields) : [];
+  const creativeName = metaVals[0] ? metaVals[0].value : '';
+  const copyText = copyVals.map(v=>v.value).join('\n');
+  return [[creativeName, copyText]];
+}
+
+function generateBandCopyLine(cfg){
+  return generateBandCopyRows(cfg)[0].map(tsvCell).join('\t');
 }
 
 /* 구글 디맨드젠 기획표 형식 복사 (붙여넣기 파서와 정확히 대응되는 라운드트립 포맷) */
