@@ -317,6 +317,7 @@
     <div class="sheet-map-row"><div class="field-label">GFA(피드/스마트채널/쇼핑소식)</div><input type="text" id="sheetGid_gfa" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">구글 디맨드젠</div><input type="text" id="sheetGid_gdemand" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">메타</div><input type="text" id="sheetGid_meta" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">네이버 밴드(새소식/밴드홈/내밴드목록/스티커)</div><input type="text" id="sheetGid_band" class="field-input" placeholder="gid"></div>
     <button class="submit-btn" id="saveApiKeyBtn" style="margin-top:12px;">저장</button>
     <div id="apiKeyStatus" style="text-align:center; font-size:12px; color:var(--mint); margin-top:8px; min-height:16px;"></div>
   </div>
@@ -324,6 +325,20 @@
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+/* 밴드 소셜광고 글자수 한도 — 광고집행가이드 v8.0 / 이용가이드 4.2 어디에도 "몇 자"라는 숫자가 없고
+   "1줄만 노출 / 최대 2줄까지 / 3줄 노출"처럼 노출 줄 수로만 규정돼 있음(길면 말줄임표 처리).
+   아래 값은 그 줄 수를 글자수로 환산한 보수적 추정치라, 파트너센터 소재 만들기 화면 입력창에 뜨는
+   실제 카운터("0/○○자") 값을 확인해서 알려주면 그 숫자로 그대로 바꾸면 됨.
+   또 새소식/스티커 지면은 "액션 이미지 추가 시 제목·내용 최대 입력 글자수가 변경(감소)"되므로
+   액션 이미지를 쓰는 소재는 actionImage 쪽 값을 기준으로 봐야 함. */
+const BAND_LIMITS = {
+  news:        { title: 20, body: 40 },  // 새소식: 제목 1줄 / 내용 2줄
+  newsAction:  { title: 14, body: 24 },  // 새소식 + 액션 이미지: 카드가 좁아져 더 짧아짐
+  home:        { title: 40 },            // 밴드홈 커버: 두줄 제목
+  list:        { body: 60 },             // 내 밴드목록: 내용 3줄
+  sticker:     { title: 20, body: 40 }   // 스티커 보상형: 제목 1줄 / 내용 2줄
+};
+
 /* ---------------- 채널 정의 ---------------- */
 const CHANNELS = {
   brand_video: {
@@ -331,7 +346,7 @@ const CHANNELS = {
     groups:[
       {name:'소재 정보', fields:[['행사명', null],['배경색(RGB)', null]]},
       {name:'PC', fields:[['새소식',36],['메인타이틀',18],['설명문구',23],['설명문구',23],['서브링크1',21],['서브링크2',21],['서브링크3',21],['섬네일문구',8],['섬네일문구',8],['섬네일문구',8]]},
-      {name:'MO', fields:[['새소식',18],['서브타이틀',15],['타이틀',14],['설명문구',17],['설명문구',17],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7]]}
+      {name:'MO', fields:[['새소식',18],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7]]}
     ],
     spec:null, noImageReview:true
   },
@@ -407,6 +422,46 @@ const CHANNELS = {
     spec:{sizes:[[960,1200],[1200,1200],[1200,628]], minKB:0, maxKB:5120},
     specHint:'이미지 규격: 960×1200 / 1200×1200 / 1200×628px 중 하나 · 용량 최대 5MB',
     note:'짧은/긴 광고 제목에 느낌표·기호·구두점 사용 불가, 영어 대문자 연속 사용 불가'
+  },
+  band_news: {
+    label:'밴드 새소식', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    groups:[
+      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'카피', fields:[['제목', BAND_LIMITS.news.title],['내용', BAND_LIMITS.news.body]]}
+    ],
+    spec:{sizes:[[300,300]], minKB:0, maxKB:10240},
+    specHint:'대표이미지 300×300px · JPG/JPEG/PNG · 10MB 이하 · (선택) 액션 이미지도 300×300px 동일 규격',
+    note:'제목 1줄 / 내용 최대 2줄 노출 — 넘치면 말줄임(...) 처리 · 액션 이미지를 추가하면 제목·내용 최대 입력 글자수가 더 줄어듦(제목 ~14자 / 내용 ~24자 기준으로 보는 게 안전) · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수는 가이드에 숫자가 없어 줄 수 기준 추정치 — 파트너센터 입력창 실제 카운터 값 알려주면 바로 교체'
+  },
+  band_home: {
+    label:'밴드홈 커버', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    groups:[
+      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'카피', fields:[['두줄 제목', BAND_LIMITS.home.title, {multiline:true}]]}
+    ],
+    spec:{sizes:[[640,640]], minKB:0, maxKB:10240},
+    specHint:'대표이미지 640×640px · JPG/JPEG/PNG · 10MB 이하',
+    note:'두줄 제목은 줄바꿈이 그대로 적용되어 2줄 노출 — 넘치면 말줄임(...) 처리 · 대표이미지 외곽 전체 테두리, 이미지와 제목 사이 구분 띠 사용 불가 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수는 가이드에 숫자가 없어 줄 수 기준 추정치'
+  },
+  band_list: {
+    label:'내 밴드목록', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    groups:[
+      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'카피', fields:[['내용', BAND_LIMITS.list.body, {multiline:true}]]}
+    ],
+    spec:{sizes:[[640,354]], minKB:0, maxKB:10240},
+    specHint:'대표이미지 640×354px · JPG/JPEG/PNG · 10MB 이하',
+    note:'내용 3줄 노출 — 넘치면 말줄임(...) 처리 · 제목 없이 대표이미지 + 내용 + 밴드/페이지 커버·이름으로 구성 · 대표이미지 외곽 전체 테두리, 이미지와 문구 사이 구분 띠 사용 불가 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수는 가이드에 숫자가 없어 줄 수 기준 추정치'
+  },
+  band_sticker: {
+    label:'밴드 스티커 보상형', unit:'char', dotColor:'#00C73C', dotText:'B', simpleCopyFormat:true, bandPolicy:true,
+    groups:[
+      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'카피', fields:[['제목', BAND_LIMITS.sticker.title],['내용', BAND_LIMITS.sticker.body]]}
+    ],
+    spec:{sizes:[[300,300]], minKB:0, maxKB:10240},
+    specHint:'대표이미지 300×300px · JPG/JPEG/PNG · 10MB 이하',
+    note:'제목 1줄 / 내용 최대 2줄 노출 — 넘치면 말줄임(...) 처리 · 과업 버튼("밴드 가입"/"페이지 구독")과 밴드명은 자동 노출이라 입력 불필요 · 광고 목적이 명확한 사업자 광고주만 집행 가능 · 이모지 사용 불가(v8.0, 2025.12.01~) · 특수문자/문장부호는 가능하지만 과도한 연속 사용 시 반려 · 최상급 표현(최고/최저가/1등/유일) 불가 · 가격·전화번호 노출 불가 · 밴드 공식/추천/지정 등 밴드가 인정한 것처럼 오인되는 표현 불가 · 글자수는 가이드에 숫자가 없어 줄 수 기준 추정치'
   }
 };
 
@@ -427,13 +482,14 @@ function byteLen(str){
    새 행을 이어붙임(append) — 팀이 그동안 복사→붙여넣기 해온 시트 포맷을 그대로 재현.
    gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
 const DEFAULT_GOOGLE_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
-const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109' };
+const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109', band:'' };
 const SHEET_GID_FIELD_MAP = {
   brand: ['brand_video', 'brand_image'],
   bizboard: ['bizboard'],
   gfa: ['gfa_feed', 'gfa_smart', 'gfa_shopping'],
   gdemand: ['gdemand'],
-  meta: ['meta']
+  meta: ['meta'],
+  band: ['band_news', 'band_home', 'band_list', 'band_sticker']
 };
 
 function getSheetGidForChannel(channelKey){
@@ -575,6 +631,19 @@ async function copyCellFormat(token, spreadsheetId, sheetId, source, destination
     })
   });
   if(!res.ok) throw new Error('서식 복사 실패: ' + (await res.text()));
+}
+
+/* formatSourceRow0(예: gdemand의 82)은 "맨 처음, 아직 한 번도 내보내기 전" 기준 서식 블록의 위치일 뿐 —
+   내보내기 때마다 그 위(맨 위)에 새 항목이 꽂히면서 블록이 그만큼씩 계속 아래로 밀려나는데, 매번 같은
+   고정 숫자를 그대로 쓰면 두 번째 내보내기부터 실제 위치와 어긋남. 그래서 마지막으로 계산해낸 "현재
+   실제 위치"를 스프레드시트+탭별로 저장해뒀다가, 다음 내보내기 때 그 값을 이어서 씀(맨 처음엔 저장된
+   값이 없으니 호출부가 넘긴 최초 숫자를 그대로 씀) */
+function getPersistedFormatSourceRow0(spreadsheetId, gid, fallback){
+  const stored = localStorage.getItem(`sheet_format_source_row0_${spreadsheetId}_${gid}`);
+  return stored != null ? parseInt(stored, 10) : fallback;
+}
+function savePersistedFormatSourceRow0(spreadsheetId, gid, value){
+  localStorage.setItem(`sheet_format_source_row0_${spreadsheetId}_${gid}`, String(value));
 }
 
 /* sheetId에 빈 행을 count개 삽입(startIndex0 위치에, 기존 내용은 그만큼 아래로 밀림) —
@@ -791,16 +860,21 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   // 3) 서식 복사 — 기본은 삽입 때문에 밀려난 "원래 맨 위 항목"을 템플릿으로 사용하지만, formatSourceRow0이
   //    주어지면(예: gdemand — 정확한 서식을 가진 기준 블록이 탭 안 고정된 위치에 있음) 그 자리를 기준으로
   //    씀. 그 자리도 이번 삽입으로 totalInsertCount만큼 아래로 밀렸으니 그만큼 더해서 실제 위치를 구함.
-  //    실패해도 값은 이미 반영됐으니 여기서 던지지 않고 콘솔에만 남김.
+  //    이 실제 위치를 다음 내보내기를 위해 저장해둠(안 그러면 다음 번엔 다시 최초 고정 숫자부터
+  //    계산해서 지난 내보내기들로 누적된 이동분을 놓침). 실패해도 값은 이미 반영됐으니 여기서
+  //    던지지 않고 콘솔에만 남김.
   if(!skipFormatCopy){
     try{
-      const sourceBase0 = formatSourceRow0 != null ? formatSourceRow0 : insertStart0;
+      const sourceBase0 = formatSourceRow0 != null
+        ? getPersistedFormatSourceRow0(spreadsheetId, gid, formatSourceRow0)
+        : insertStart0;
       const sourceStart0 = sourceBase0 + totalInsertCount;
       const sourceEnd0 = sourceStart0 + rows.length;
       await copyCellFormat(token, spreadsheetId, sheetId,
         { startRowIndex: sourceStart0, endRowIndex: sourceEnd0, startColumnIndex: startCol0, endColumnIndex: endCol0 },
         { startRowIndex: insertRow0, endRowIndex: insertRow0 + rows.length, startColumnIndex: startCol0, endColumnIndex: endCol0 }
       );
+      if(formatSourceRow0 != null) savePersistedFormatSourceRow0(spreadsheetId, gid, sourceStart0);
     }catch(e){
       console.error('서식 복사 실패(값은 정상적으로 들어감):', e);
     }
@@ -1051,7 +1125,11 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`, buildBrandSearchFormatRequests, applyBrandSearchCountFormulas);
+    // forceInsertAtTop:true — 마커('PC') 기반 삽입은 내보내기마다 자기 자신의 PC/MO 헤더 행이
+    // 새로 생기면서 그 글자를 "처음 나오는 PC"로 잘못 찾아, 두 번째 내보내기부터 직전 항목의
+    // 헤더 행과 데이터 행 사이로 새 항목이 끼어드는 문제가 있었음. GFA/gdemand와 같이 매번
+    // 맨 위(0행)에 통째로 새로 꽂아 넣는 방식으로 통일함.
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`, buildBrandSearchFormatRequests, applyBrandSearchCountFormulas, true);
     area.appendChild(exportBtn);
   }
 
@@ -1122,8 +1200,11 @@ function renderForm(){
     exportBtn.style.marginBottom = '14px';
     exportBtn.style.background = 'var(--mint)';
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    // 서식은 83~97행(고정 기준 서식 블록)에서 그대로 복사해옴 — 그 블록을 지우거나 옮기면 이 숫자도 바꿔야 함
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, null, null, true, 2, false, 82);
+    // 서식은 기준 서식 블록에서 그대로 복사해옴 — 여기 적은 숫자는 "저장된 값이 아직 없을 때"의
+    // 최초 시작값일 뿐이고, 실제로는 내보내기 때마다 getPersistedFormatSourceRow0가 계산해낸 현재
+    // 위치를 이어받아 씀(2026-09-10 기준 실측: 90~104행 = 0-based 89). 블록을 지우거나 다른 곳으로
+    // 옮기면 이 숫자도 그 시점의 실제 위치로 다시 맞춰야 함
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, null, null, true, 2, false, 89);
     area.appendChild(exportBtn);
   }
 
@@ -2042,6 +2123,69 @@ function generateGdemandCopyText(cfg){
   return generateGdemandRows(cfg).map(r=>r.join('\t')).join('\n');
 }
 
+/* ---------------- 밴드 소셜광고 문구 자동 검사 ----------------
+   근거: 소셜광고 광고집행가이드 v8.0 "2.6 등록 불가 문구(제목, 설명)" + "2.4 이벤트 기준".
+   AI 판단에 맡기면 들쭉날쭉한 것들(이모지/전화번호/가격 표기처럼 기계적으로 확정 가능한 항목)만
+   여기서 먼저 확정해서 issues로 올리고, 맥락 판단이 필요한 건 시스템 프롬프트 쪽에 맡김. */
+const BAND_SUPERLATIVES = ['초일류','최고','최저가','최상','초특급','회원수1등','회원수 1등','1등','1위','유일','최다','업계 1위','No.1','NO.1','넘버원'];
+const BAND_FAKE_OFFICIAL = ['밴드지정','밴드 지정','밴드추천','밴드 추천','인기 밴드','인기밴드','밴드 협찬','밴드협찬','공식'];
+const BAND_BANNED_SLANG = ['미친 가격','미친가격','병맛','극혐','레전드급 혐오'];
+const BAND_SEXUAL_HINTS = ['성인 놀이터','성인놀이터','은밀한 유혹','19금','엿보기','야사','야동'];
+const BAND_EVENT_WORDS = ['무료 증정','무료증정','사은품','경품','무료로 드립니다','추첨'];
+
+function checkBandCopyIssues(label, val, prefix){
+  const issues = [];
+  if(!val) return issues;
+  const at = `${prefix || ''}"${label}"`;
+  const push = (severity, category, reason, suggestion)=>issues.push({severity, category:`밴드/${category}`, reason:`${at}: ${reason}`, suggestion});
+
+  // 1. 이모지 — v8.0(2025.12.01)부터 전면 사용 불가. 특수문자/문장부호는 허용이라 이모지만 골라냄.
+  //    ▶ ◀ ※ 처럼 "텍스트 표현이 기본"인 기호는 가이드가 사용 가능 예로 명시했으므로 제외하고,
+  //    그림 표현이 기본(Emoji_Presentation)이거나 변형 선택자(U+FE0F)가 붙어 그림으로 그려지는 것만 잡음
+  const emoji = val.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}\uFE0F/gu);
+  if(emoji){
+    push('high','이모지', `이모지(${[...new Set(emoji)].join(' ')})가 포함됨. 가이드 v8.0부터 소재 문구에 이모지 사용 불가.`, '이모지를 빼거나 ▶ ◀ ! 같은 특수문자/문장부호로 대체(단, 과도한 연속 사용은 금지).');
+  }
+  // 2. 과도한 특수문자/문장부호 연속 사용
+  const runs = val.match(/([!?~.,ㆍ·★☆♡♥▶◀※])\1{2,}/g);
+  if(runs){
+    push('medium','특수문자 과다', `같은 기호를 3번 이상 연속 사용한 부분이 있음(${[...new Set(runs)].join(' ')}). 광고 품질 저해로 판단되면 반려 사유.`, '연속 기호를 1개로 줄이기(예: "대박~~~~!!!" → "대박!").');
+  }
+  // 3. 전화번호 노출 — 문구에 전화번호 표기 불가
+  if(/(0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4})|(1[5-9]\d{2}[-.\s]?\d{4})|(080[-.\s]?\d{3,4}[-.\s]?\d{4})/.test(val)){
+    push('high','전화번호', '텍스트 문구에 전화번호로 보이는 숫자가 포함됨. 소재 문구에는 전화번호를 노출할 수 없음.', '전화번호를 빼고, 연락처는 랜딩 게시글 안에서만 안내.');
+  }
+  // 4. 가격 표기 — 상품/서비스 가격을 문구에 쓸 수 없음
+  if(/\d{1,3}(,\d{3})+\s*원|\d{2,}\s*원|\d+\s*만\s*원|\d+\s*천\s*원/.test(val)){
+    push('high','가격 표기', '텍스트 문구에 가격으로 보이는 표기가 포함됨. 상품·서비스 가격을 소재 문구에 표기할 수 없음.', '가격은 빼고 랜딩 게시글에서만 안내(예: "특가 진행 중").');
+  }
+  // 5. 할인율/할인 표현 — 밴드 게시글에서 확인 가능해야만 허용
+  if(/\d+\s*%\s*(할인|세일)|반값/.test(val)){
+    push('medium','할인 표현', '할인율·반값 등 가격 표현이 있음. 해당 내용이 광고 대상 밴드/게시글에서 실제로 확인 가능해야 사용 가능.', '랜딩 게시글에 동일한 할인 내용이 올라가 있는지 확인(없으면 문구에서 삭제).');
+  }
+  // 6. 최상급 표현
+  const sup = BAND_SUPERLATIVES.filter(w=>val.includes(w));
+  if(sup.length) push('high','최상급 표현', `최상급 표현(${sup.join(', ')})이 포함됨. 밴드는 최상급 문구 사용 불가.`, '"인기 있는", "많이 찾는" 등 비최상급 표현으로 바꾸기.');
+  // 7. 밴드가 인정한 것처럼 오인되는 문구
+  const fake = BAND_FAKE_OFFICIAL.filter(w=>val.includes(w));
+  if(fake.length) push('high','밴드 공인 오인', `"${fake.join(', ')}" 표현이 포함됨. 밴드가 지정·추천·협찬한 업체로 오인될 수 있는 문구는 사용 불가.`, '해당 표현 삭제.');
+  // 8. 사회적 물의 신조어
+  const slang = BAND_BANNED_SLANG.filter(w=>val.includes(w));
+  if(slang.length) push('high','금지 신조어', `"${slang.join(', ')}"는 사회적으로 물의를 일으킬 수 있는 표현으로 분류되어 반려 대상.`, '순화된 표현으로 교체.');
+  // 9. 선정성 연상 문구
+  const sexual = BAND_SEXUAL_HINTS.filter(w=>val.includes(w));
+  if(sexual.length) push('high','선정성', `"${sexual.join(', ')}" 등 선정성을 연상시키는 표현이 포함됨.`, '해당 표현 삭제.');
+  // 10. 명품 + 가격/판매 표현 — 이미테이션 의심으로 사용 불가
+  if(val.includes('명품') && /(세일|할인|땡처리|대방출|아울렛|재고|판매|정리|쇼핑몰)/.test(val)){
+    push('high','명품+판매 표현', '"명품"과 가격·판매 표현이 함께 쓰임. 이미테이션/가품 판매 의심으로 사용 불가.', '"명품"을 빼거나 브랜드 정품임을 밴드/게시글에서 확인 가능하게 구성.');
+  }
+  // 11. 이벤트성 문구인데 이벤트 표기가 없는 경우
+  if(BAND_EVENT_WORDS.some(w=>val.includes(w)) && !/\[?이벤트\]?/.test(val)){
+    push('medium','이벤트 표기 누락', '무료 증정·사은품 등 이벤트성 문구인데 이벤트임을 알 수 있는 표기가 없음.', '문구 앞에 [이벤트] 표기 추가 + 랜딩 게시글에 기간/참여방법/당첨인원/발표일정 4가지 모두 기재.');
+  }
+  return issues;
+}
+
 function collectFieldsSummary(){
   const cfg = CHANNELS[currentChannel];
   const area = document.getElementById('formArea');
@@ -2078,6 +2222,7 @@ function collectFieldsSummary(){
             }
           }
           lines.push(`${label}: ${val || '(공란)'} (${count}${unit==='byte'?'B':'자'}${limit!=null ? '/'+limit : ''})${pxNote}`);
+          if(cfg.bandPolicy && label !== '소재명') overLimitIssues.push(...checkBandCopyIssues(label, val, `소재 ${itemIdx+1} `));
           if(limit != null && count > limit){
             overLimitIssues.push({
               severity:'high', category:'글자수 초과',
@@ -2120,6 +2265,7 @@ function collectFieldsSummary(){
         }
       }
       lines.push(`${label}: ${val || '(공란)'} (${count}${unit==='byte'?'B':'자'}${limit!=null ? '/'+limit : ''})${pxNote}`);
+      if(cfg.bandPolicy && label !== '소재명') overLimitIssues.push(...checkBandCopyIssues(label, val, ''));
       if(limit != null && count > limit){
         overLimitIssues.push({
           severity:'high', category:'글자수 초과',
@@ -2360,6 +2506,24 @@ const SYSTEM_PROMPT = `
 [GFA 스마트채널] 투명배경/누끼 여부는 이미 코드가 정확히 측정해서 별도로 issues에 추가하니 너는 절대 언급하지 마. 메인문구 1행/2행, 서브문구 1행 작성 시 여러 배너 크기(750×280/750×200/750×160)에서 동시 노출되므로 가장 작은 배너에서도 잘리지 않는지, 첫 줄/마지막 줄이 가려지지 않는지 확인
 [GFA 쇼핑소식] 이미지에 별도로 합성/삽입된 브랜드 로고나 워터마크가 보이면 반려. 단, 제품 본체에 원래 있는 로고는 문제 없음. 투명/반투명 배경 여부는 이미 코드가 정확히 측정해서 별도로 issues에 추가하니 너는 절대 언급하지 마
 
+[네이버 밴드 (새소식 / 밴드홈 커버 / 내 밴드목록 / 스티커 보상형)]
+- 근거: 밴드 소셜광고 광고집행가이드 v8.0. 아래 중 "기계적으로 확정 가능한 것"(이모지, 전화번호, 가격 표기, 최상급 표현, 밴드 공인 오인 문구, 금지 신조어, 명품+판매 표현, 이벤트 표기 누락)은 이미 코드가 정확히 검사해서 issues에 넣으니 너는 중복으로 만들지 마
+- 네가 판단할 것은 이미지와 "맥락"이야:
+  · 대표이미지/액션이미지가 광고 대상 밴드 콘텐츠·랜딩 내용과 무관해 보이면 반려
+  · 해상도가 낮거나 깨져 보이는 이미지, 형체를 알아보기 힘든 이미지, 가독성 낮은 이미지 → 반려
+  · 🔴 이미지 영역 전체 외곽에 테두리를 둘렀거나, 대표이미지와 문구 영역 사이에 구분용 테두리/띠를 넣은 경우 → 반려 (밴드홈 커버·내 밴드목록에서 특히 자주 걸림)
+  · 밴드 서비스가 제공하는 기능/공지로 오인될 수 있는 UI 모방 이미지, 밴드 로고 변형물 → 반려
+  · 뱃지·스티커 등 장식 요소를 덧붙인 이미지 → 반려
+  · 전-후 비교 이미지, 비현실적 결과를 보여주는 이미지 → 반려
+  · 유명인·연예인·방송화면 등 초상권/저작권 소지 이미지는 증빙 없으면 반려
+  · 주류·담배·선정적 이미지 → 반려
+  · 과장/허위 문구("살 안 찌는 체질로 개선", "단기간 10kg 감량" 류) → 반려
+  · 비교급 표현인데 비교 기준이 확인 불가("원가 이하 판매") → 반려
+  · 유저에게 불쾌감을 주거나 동정심을 유발하는 문구("비싸면 탈퇴하세요", "안 팔리면 저 죽어요") → 반려
+  · 문구가 노출 줄 수(새소식 제목 1줄·내용 2줄, 밴드홈 두줄 제목, 내 밴드목록 3줄)를 넘겨 말줄임될 위험이 있으면 "말줄임 위험"으로 주의 표시 (단, 글자수 자체를 세지는 말고 디바이스별 줄바꿈 가변성만 언급)
+- 금지 업종(담배/주류, 도박·사행성, 다단계, 의약품·의료기기·건강기능식품, 부인과·비뇨기과, 종교·정치, 이미테이션, 금융·부동산·투자자문·대출)에 해당해 보이는 소재면 "업종 확인 필요"로 지적
+- 의료/보험/법률 업종 소재는 사전심의필 번호·증빙 제출이 필요하다는 점을 지적
+
 [구글 디맨드젠]
 - 광고 제목/설명에 느낌표, 기호, 구두점 사용 시 반려
 - 영어 대문자 연속 사용(예: "SALE", "NEW") 시 반려
@@ -2436,10 +2600,17 @@ async function reviewOneImage(cfg, fieldsText, overLimitIssues, img, apiKey){
   }
 
   parsed.issues = [...overLimitIssues, ...specIssues, ...(parsed.issues || [])];
-  if(overLimitIssues.length || specIssues.length){
+  // 자동 검증(글자수/폭/규격/용량/밴드 문구 정책) 결과는 AI 판정보다 우선함. 다만 severity가 high인
+  // 것만 '반려위험'으로 끌어올리고, medium 이하(예: 밴드 '할인 표현처럼 게시글 확인이 필요한 항목')는
+  // 주의필요까지만 올림 — 전부 반려위험으로 적으면 진짜 반려 사유가 묻힘.
+  const autoIssues = [...overLimitIssues, ...specIssues];
+  const hardIssues = autoIssues.filter(i=>i.severity === 'high');
+  if(hardIssues.length){
     parsed.verdict = '반려위험';
-    const critical = [...overLimitIssues, ...specIssues].map(i=>i.reason).join(' ');
-    parsed.summary = `⚠ 규격/용량/글자수 자동 검증에서 문제 발견: ${critical}`;
+    parsed.summary = `⚠ 자동 검증에서 반려 사유 발견: ${hardIssues.map(i=>i.reason).join(' ')}`;
+  }else if(autoIssues.length){
+    if(parsed.verdict === '승인유력') parsed.verdict = '주의필요';
+    parsed.summary = `⚠ 자동 검증 주의 항목: ${autoIssues.map(i=>i.reason).join(' ')}`;
   }
   return parsed;
 }
