@@ -8,111 +8,158 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --page-bg:#EDEFFA;
-    --shell-bg:#FFFFFF;
-    --sidebar-bg:#FFFFFF;
-    --primary:#3A63F0;
-    --primary-dark:#2E4FD1;
-    --primary-soft:#EAF0FF;
-    --mint:#22C08C;
-    --mint-soft:#E5F8F1;
-    --amber:#F0A93C;
-    --amber-soft:#FDF1DE;
-    --red:#F0524B;
-    --red-soft:#FCE9E8;
-    --text:#1B1F3B;
-    --text-soft:#9297B5;
-    --border:#EEF0F8;
-    --radius:20px;
-    --shadow:0 10px 34px rgba(40,50,120,0.10);
+    --page-bg:#DAD6D1;
+    --frame-bg:#1D1B19;
+    --shell-bg:#F2F1EE;
+    --sidebar-bg:transparent;
+    --sidebar-panel:#2A2725;
+    --sidebar-text:#A8A29C;
+    --primary:#36322F;
+    --primary-dark:#1F1C1A;
+    --primary-soft:#ECEAE6;
+    --mint:#3FA56B;
+    --mint-soft:#E8F4EC;
+    --amber:#D9A23A;
+    --amber-soft:#FBF1DC;
+    --red:#E0534A;
+    --red-soft:#FCEBE9;
+    --text:#1F1C1A;
+    --text-soft:#8E8984;
+    --border:#ECEAE6;
+    --radius:22px;
+    --shadow:0 30px 80px rgba(30,25,20,0.28);
+    --card-shadow:0 1px 2px rgba(30,25,20,0.04), 0 6px 20px rgba(30,25,20,0.04);
   }
   *{box-sizing:border-box;}
+  html,body{height:100%;}
   body{
     margin:0; background:var(--page-bg); color:var(--text);
     font-family:'Noto Sans KR', sans-serif; min-height:100vh;
-    display:flex; align-items:flex-start; justify-content:center;
-    padding:32px 16px;
+    display:flex; align-items:center; justify-content:center;
+    padding:0; -webkit-font-smoothing:antialiased;
   }
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.14); border-radius:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
   .shell{
-    width:100%; max-width:1280px; background:var(--shell-bg); border-radius:30px;
-    box-shadow:var(--shadow); display:flex; overflow:hidden; min-height:calc(100vh - 64px);
+    width:100%; height:100vh; min-height:620px;
+    background:var(--frame-bg); border-radius:0; padding:10px;
+    box-shadow:var(--shadow); display:flex; gap:10px; overflow:hidden;
   }
 
-  /* ---------- Sidebar ---------- */
+  /* ---------- Sidebar (dark) ---------- */
   .sidebar{
-    width:220px; flex:0 0 220px; background:var(--sidebar-bg);
-    padding:28px 16px; display:flex; flex-direction:column;
-    border-right:1px solid var(--border);
+    width:236px; flex:0 0 236px; background:var(--sidebar-bg);
+    padding:6px 4px 4px; display:flex; flex-direction:column; gap:12px; min-height:0;
   }
-  .brand{display:flex; align-items:center; gap:9px; padding:4px 10px 28px; font-weight:800; font-size:16px; color:var(--primary);}
-  .brand-mark{width:30px; height:30px; border-radius:10px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;}
-  .nav-label{font-size:10.5px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-soft); padding:4px 12px; margin-bottom:6px; font-weight:700;}
+  .brand{display:flex; align-items:center; gap:10px; padding:8px 10px 6px; font-weight:700; font-size:17px; color:#fff; letter-spacing:-.2px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%; background:#fff; color:var(--frame-bg); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800;}
+  .nav-panel{
+    background:var(--sidebar-panel); border-radius:24px; padding:12px 8px;
+    display:flex; flex-direction:column; flex:1; min-height:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .nav-label{font-size:10.5px; letter-spacing:.6px; color:#6F6964; padding:2px 12px 10px; font-weight:600;}
   .nav-label span{text-transform:none; letter-spacing:0; font-size:10px;}
   .channel-item{display:flex; align-items:center; gap:6px;}
+  .channel-tabs{display:flex; flex-direction:column; gap:3px; overflow-y:auto; min-height:0; padding-right:2px;}
+  .channel-tabs::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);}
+  .channel-tab{
+    display:flex; align-items:center; gap:11px;
+    border:none; background:transparent; color:var(--sidebar-text);
+    padding:8px 10px; border-radius:16px; font-size:12.5px; font-weight:500;
+    cursor:pointer; text-align:left; width:100%; font-family:inherit;
+    transition:background .15s, color .15s;
+  }
+  .channel-tab:hover{background:rgba(255,255,255,0.05); color:#E7E2DD;}
+  .channel-tab.active{
+    background:linear-gradient(135deg, #57514C 0%, #3A3532 100%); color:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 14px rgba(0,0,0,0.25);
+  }
+  .tab-dot{width:28px; height:28px; border-radius:50%; flex:0 0 28px; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,0.06);}
+
+  .sidebar-card{
+    background:#fff; border-radius:24px; padding:16px; color:var(--text);
+  }
+  .sidebar-card-head{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .sidebar-card-ring{
+    width:40px; height:40px; border-radius:50%; flex:0 0 40px;
+    background:conic-gradient(var(--primary) 0 72%, var(--primary-soft) 72% 100%);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .sidebar-card-ring::after{content:'✓'; width:32px; height:32px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800;}
+  .sidebar-card-title{font-size:13px; font-weight:700;}
+  .sidebar-card-desc{font-size:10.5px; color:var(--text-soft); line-height:1.5; margin-top:2px;}
+  .sidebar-card-btn{
+    width:100%; border:none; background:var(--primary-soft); color:var(--text); font-family:inherit;
+    font-size:12px; font-weight:600; padding:10px; border-radius:999px; cursor:pointer;
+  }
+  .sidebar-card-btn:hover{background:#E2DFDA;}
 
   .modal-overlay{
-    position:fixed; inset:0; background:rgba(20,24,50,0.45); display:flex;
+    position:fixed; inset:0; background:rgba(25,22,20,0.45); display:flex; backdrop-filter:blur(3px);
     align-items:center; justify-content:center; z-index:50; padding:20px;
   }
   .modal-box{
-    background:#fff; border-radius:20px; width:100%; max-width:560px; padding:20px;
+    background:#fff; border-radius:26px; width:100%; max-width:560px; padding:24px;
     box-shadow:0 20px 60px rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:4px;
     max-height:85vh; overflow-y:auto;
   }
   .sheet-map-row{display:grid; grid-template-columns:140px 1fr; align-items:center; gap:8px; padding:5px 0;}
-  .sheet-map-row .field-label{font-size:11.5px; color:var(--text-soft); font-weight:700;}
-  .modal-header{display:flex; align-items:center; justify-content:space-between; font-size:15px; font-weight:800; margin-bottom:8px;}
-  .modal-close{border:none; background:#F5F6FC; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:var(--text-soft);}
-  .channel-tabs{display:flex; flex-direction:column; gap:5px;}
-  .channel-tab{
-    display:flex; align-items:center; gap:11px;
-    border:none; background:transparent; color:#6A6F91;
-    padding:11px 14px; border-radius:14px; font-size:13px; font-weight:700;
-    cursor:pointer; text-align:left; width:100%;
-  }
-  .channel-tab:hover{background:var(--primary-soft); color:var(--primary);}
-  .channel-tab.active{background:var(--primary); color:#fff; box-shadow:0 8px 18px rgba(58,99,240,0.32);}
-  .tab-dot{width:24px; height:24px; border-radius:8px; flex:0 0 24px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff;}
-  .channel-tab.active .tab-dot{background:rgba(255,255,255,0.25) !important;}
+  .sheet-map-row .field-label{font-size:11.5px; color:var(--text-soft); font-weight:600;}
+  .modal-header{display:flex; align-items:center; justify-content:space-between; font-size:16px; font-weight:700; margin-bottom:8px;}
+  .modal-close{border:1px solid var(--border); background:#fff; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:12px; color:var(--text-soft);}
 
-  /* ---------- Main ---------- */
-  .main{flex:1; padding:32px 36px 48px; min-width:0;}
-  .topbar{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:10px;}
-  .topbar h1{font-size:24px; font-weight:800; margin:0;}
+  /* ---------- Main (light panel) ---------- */
+  .main{
+    flex:1; min-width:0; background:var(--shell-bg); border-radius:28px;
+    padding:22px 26px 28px; overflow-y:auto;
+  }
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:10px;}
+  .topbar h1{
+    font-size:14px; font-weight:600; margin:0; background:#fff; border:1px solid var(--border);
+    padding:10px 18px; border-radius:999px; display:inline-flex; align-items:center; gap:6px;
+  }
+  .topbar h1 span{color:var(--text-soft); font-weight:500;}
   .topbar-icons{display:flex; align-items:center; gap:8px;}
   .icon-btn{
-    width:38px; height:38px; border-radius:50%; background:#F5F6FC; border:1px solid var(--border);
-    display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--text-soft); cursor:default;
+    width:42px; height:42px; border-radius:50%; background:#fff; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--text); cursor:default;
+    transition:background .15s;
   }
-  .subtitle{font-size:12.5px; color:var(--text-soft); margin:0 0 24px; font-weight:600;}
-  .subtitle b{color:var(--primary);}
+  .icon-btn:hover{background:var(--primary-soft);}
+  .subtitle{font-size:12px; color:var(--text-soft); margin:12px 4px 18px; font-weight:500;}
+  .subtitle b{color:var(--text); font-weight:700;}
 
   /* ---------- Grid / Cards ---------- */
-  .grid{display:grid; grid-template-columns:1.2fr 1fr; gap:22px;}
-  @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
+  .grid{display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:16px; align-items:start;}
+  @media (max-width:1100px){ .grid{grid-template-columns:1fr;} }
 
-  .card{background:#fff; border-radius:18px; border:1px solid var(--border);}
+  .card{background:#fff; border-radius:var(--radius); box-shadow:var(--card-shadow);}
+  .grid > .card:last-child{position:sticky; top:0;}
   .card-header{
-    padding:16px 22px; font-size:13.5px; font-weight:800; color:var(--text);
-    display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border);
+    padding:20px 24px 6px; font-size:16px; font-weight:700; color:var(--text); letter-spacing:-.2px;
+    display:flex; align-items:center; justify-content:space-between;
   }
-  .card-header .pill{font-size:10.5px; font-weight:700; color:var(--primary); background:var(--primary-soft); padding:4px 10px; border-radius:999px;}
-  .card-body{padding:18px 22px 24px;}
+  .card-header .pill{font-size:10.5px; font-weight:600; color:var(--text-soft); background:#fff; border:1px solid var(--border); padding:6px 12px; border-radius:999px;}
+  .card-body{padding:14px 24px 24px;}
 
-  .group-title{font-size:11px; font-weight:800; color:var(--text-soft); text-transform:uppercase; letter-spacing:.6px; margin:16px 0 8px;}
+  .group-title{font-size:11px; font-weight:700; color:var(--text-soft); letter-spacing:.3px; margin:20px 0 8px;}
   .group-title:first-child{margin-top:0;}
 
-  .note-box{font-size:11.5px; color:#6A6F91; background:var(--primary-soft); border-radius:12px; padding:10px 13px; margin-bottom:14px; line-height:1.55;}
+  .note-box{font-size:11.5px; color:#6B6560; background:var(--primary-soft); border-radius:14px; padding:11px 14px; margin-bottom:14px; line-height:1.6;}
 
   .field-row{display:grid; grid-template-columns: 100px 1fr 56px; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border);}
   .field-row:last-child{border-bottom:none;}
-  .field-label{font-size:11.5px; color:var(--text-soft); font-weight:700;}
+  .field-label{font-size:11.5px; color:var(--text-soft); font-weight:600;}
   .field-input{
-    border:1px solid var(--border); background:#FAFBFF; border-radius:10px;
-    padding:9px 13px; font-family:'Noto Sans KR'; font-size:13px; color:var(--text); width:100%;
+    border:1px solid var(--border); background:#F7F6F4; border-radius:12px;
+    padding:10px 14px; font-family:'Noto Sans KR'; font-size:13px; color:var(--text); width:100%;
+    transition:border-color .15s, background .15s;
   }
-  .field-input:focus{outline:none; border-color:var(--primary); background:#fff;}
-  .field-count{text-align:right; font-size:10.5px; font-weight:700; color:var(--text-soft);}
+  .field-input:focus{outline:none; border-color:#BDB7B1; background:#fff;}
+  .field-count{text-align:right; font-size:10.5px; font-weight:600; color:var(--text-soft);}
   .field-count.over{color:var(--red);}
   .field-row.over .field-input{border-color:var(--red); background:var(--red-soft);}
   .field-row.limit-hit .field-input{border-color:var(--red) !important; background:var(--red-soft) !important; transition:background .1s;}
@@ -120,21 +167,21 @@
   .field-px{grid-column:1 / -1; text-align:right; font-size:10px; color:var(--text-soft); margin-top:-6px; padding-bottom:3px;}
   .field-px.over{color:var(--red); font-weight:700;}
 
-  .spec-hint{font-size:11.5px; color:#6A6F91; background:var(--mint-soft); border-radius:12px; padding:10px 13px; margin-bottom:10px; line-height:1.5;}
+  .spec-hint{font-size:11.5px; color:#5E5953; background:#F5F3EF; border:1px solid var(--border); border-radius:14px; padding:11px 14px; margin-bottom:10px; line-height:1.55;}
 
   .upload-box{
-    border:1.5px dashed var(--border); border-radius:14px; padding:12px; background:#FAFBFF;
+    border:1.5px dashed #DAD6D1; border-radius:18px; padding:12px; background:#FAF9F7;
   }
-  .upload-box.has-image{border-style:solid; background:#fff;}
+  .upload-box.has-image{border-style:solid; border-color:var(--border); background:#fff;}
   .upload-grid{display:flex; flex-wrap:wrap; gap:10px;}
   .upload-thumb{
-    position:relative; width:100px; height:100px; border-radius:12px; overflow:hidden;
-    background:repeating-conic-gradient(#e9e9ef 0% 25%, #f7f7fa 0% 50%) 50% / 14px 14px;
+    position:relative; width:100px; height:100px; border-radius:14px; overflow:hidden;
+    background:repeating-conic-gradient(#ebe9e6 0% 25%, #f8f7f5 0% 50%) 50% / 14px 14px;
     border:1px solid var(--border);
   }
   .upload-thumb img{width:100%; height:100%; object-fit:contain; display:block;}
   .upload-add-tile{
-    width:100px; height:100px; border:1.5px dashed var(--border); border-radius:12px;
+    width:100px; height:100px; border:1.5px dashed #DAD6D1; border-radius:14px;
     display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer;
     padding:6px; font-size:10.5px; color:var(--text-soft);
   }
@@ -145,62 +192,65 @@
   .remove-img{position:absolute; top:6px; right:6px; background:var(--text); color:#fff; border:none; width:20px; height:20px; border-radius:50%; cursor:pointer; font-size:11px; line-height:1;}
   .transparency-badge{
     position:absolute; bottom:5px; left:5px; font-size:9.5px; font-weight:700; padding:3px 7px;
-    border-radius:999px; background:#F5F6FC; color:var(--text-soft);
+    border-radius:999px; background:#F2F1EE; color:var(--text-soft);
   }
-  .transparency-badge.yes{background:var(--mint-soft); color:#158F67;}
-  .transparency-badge.no{background:var(--red-soft); color:#C13B32;}
-  .transparency-badge.unknown{background:var(--amber-soft); color:#A9750F;}
+  .transparency-badge.yes{background:var(--mint-soft); color:#2E7D50;}
+  .transparency-badge.no{background:var(--red-soft); color:#B83F37;}
+  .transparency-badge.unknown{background:var(--amber-soft); color:#9A7016;}
 
   .submit-btn{
-    width:100%; background:var(--primary); color:#fff; border:none; padding:14px;
-    border-radius:999px; font-size:14px; font-weight:800; cursor:pointer; margin-top:16px;
-    box-shadow:0 10px 22px rgba(58,99,240,0.30);
+    width:100%; background:var(--primary); color:#fff; border:none; padding:15px;
+    border-radius:999px; font-size:14px; font-weight:600; cursor:pointer; margin-top:18px; font-family:inherit;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 18px rgba(30,25,20,0.18);
+    transition:background .15s;
   }
   .submit-btn:hover{background:var(--primary-dark);}
-  .submit-btn:disabled{background:#CBD0EA; box-shadow:none; cursor:not-allowed;}
+  .submit-btn:disabled{background:#CFCAC4; box-shadow:none; cursor:not-allowed;}
 
-  .result-body{display:flex; flex-direction:column; min-height:320px;}
+  .result-body{display:flex; flex-direction:column; min-height:420px;}
   .empty-state, .loading-state{flex:1; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--text-soft); font-size:13px; line-height:1.7;}
+  .empty-state, .loading-state{min-height:380px;}
   .loading-state{flex-direction:column; gap:12px;}
   .spin{width:38px; height:38px; border:4px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
   .verdict-pill{
     display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:9px 18px;
-    font-size:13.5px; font-weight:800; margin-bottom:16px;
+    font-size:13.5px; font-weight:700; margin-bottom:16px;
   }
-  .verdict-pill .dot{width:9px; height:9px; border-radius:50%;}
-  .verdict-pill.pass{background:var(--mint-soft); color:#158F67;}
+  .verdict-pill .dot{width:8px; height:8px; border-radius:50%;}
+  .verdict-pill.pass{background:var(--mint-soft); color:#2E7D50;}
   .verdict-pill.pass .dot{background:var(--mint);}
-  .verdict-pill.warn{background:var(--amber-soft); color:#A9750F;}
+  .verdict-pill.warn{background:var(--amber-soft); color:#9A7016;}
   .verdict-pill.warn .dot{background:var(--amber);}
-  .verdict-pill.fail{background:var(--red-soft); color:#C23A33;}
+  .verdict-pill.fail{background:var(--red-soft); color:#B83F37;}
   .verdict-pill.fail .dot{background:var(--red);}
 
-  .issue-list{display:flex; flex-direction:column; gap:9px;}
-  .issue{border-radius:14px; background:#FAFBFF; border:1px solid var(--border); border-left:4px solid; padding:11px 14px;}
-  .issue.high{border-left-color:var(--red);}
-  .issue.medium{border-left-color:var(--amber);}
-  .issue.low{border-left-color:var(--text-soft);}
-  .issue-cat{font-size:10.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase;}
+  .issue-list{display:flex; flex-direction:column; gap:8px;}
+  .issue{border-radius:16px; background:#F8F7F5; border:1px solid var(--border); padding:12px 14px 12px 30px; position:relative;}
+  .issue::before{content:''; position:absolute; left:14px; top:17px; width:7px; height:7px; border-radius:50%; background:var(--text-soft);}
+  .issue.high::before{background:var(--red);}
+  .issue.medium::before{background:var(--amber);}
+  .issue.low::before{background:var(--text-soft);}
+  .issue-cat{font-size:11px; font-weight:700; letter-spacing:.2px;}
   .issue.high .issue-cat{color:var(--red);}
-  .issue.medium .issue-cat{color:var(--amber);}
+  .issue.medium .issue-cat{color:#B9861F;}
   .issue.low .issue-cat{color:var(--text-soft);}
-  .issue-reason{font-size:12.5px; margin:4px 0 5px; line-height:1.5; color:var(--text);}
-  .issue-fix{font-size:11.5px; color:var(--text-soft); line-height:1.5;}
-  .no-issues{text-align:center; font-size:13px; color:#158F67; font-weight:700; background:var(--mint-soft); border-radius:14px; padding:16px;}
-  .error-box{background:var(--red-soft); border:1px solid var(--red); color:#C23A33; border-radius:14px; padding:12px; font-size:13px; text-align:center;}
+  .issue-reason{font-size:12.5px; margin:4px 0 5px; line-height:1.55; color:var(--text);}
+  .issue-fix{font-size:11.5px; color:var(--text-soft); line-height:1.55;}
+  .no-issues{text-align:center; font-size:13px; color:#2E7D50; font-weight:600; background:var(--mint-soft); border-radius:16px; padding:16px;}
+  .error-box{background:var(--red-soft); border:1px solid var(--red); color:#B83F37; border-radius:16px; padding:12px; font-size:13px; text-align:center;}
 
-  footer{text-align:center; font-size:11px; color:var(--text-soft); margin-top:26px;}
+  footer{display:none;}
 
   /* ---------- Preview ---------- */
   .preview-box{
-    display:flex; align-items:center; gap:0; background:#f3f3f6; border-radius:12px;
+    display:flex; align-items:center; gap:0; background:#F4F3F1; border-radius:14px;
     overflow:hidden; border:1px solid var(--border); min-height:70px;
   }
   .preview-img-slot{
     flex:0 0 auto; display:flex; align-items:center; justify-content:center; position:relative;
-    background:repeating-conic-gradient(#e9e9ef 0% 25%, #f7f7fa 0% 50%) 50% / 14px 14px;
+    background:repeating-conic-gradient(#ebe9e6 0% 25%, #f8f7f5 0% 50%) 50% / 14px 14px;
     height:100%; min-height:70px;
   }
   .preview-img-slot img{display:block; max-height:90px; object-fit:contain;}
@@ -215,23 +265,51 @@
 
   /* ---------- 여러 소재(반복 아이템) ---------- */
   .apply-bulk-btn{
-    margin-top:8px; width:100%; background:var(--primary); color:#fff; border:none; padding:10px;
-    border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer;
+    margin-top:8px; width:100%; background:#fff; color:var(--text); border:1px solid #DDD9D4; padding:11px;
+    border-radius:999px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit;
+    transition:background .15s;
   }
-  .apply-bulk-btn:hover{background:var(--primary-dark);}
+  .apply-bulk-btn:hover{background:var(--primary-soft);}
+  .btn-row{display:flex; gap:8px; margin:0 0 16px;}
+  .btn-row > .apply-bulk-btn{flex:1; margin:0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:11px 10px;}
+  .apply-bulk-btn.dark{background:var(--primary); color:#fff; border-color:var(--primary);}
+  .apply-bulk-btn.dark:hover{background:var(--primary-dark);}
 
-  .item-card{border:1px solid var(--border); border-radius:14px; padding:12px 14px; margin-bottom:12px; background:#fff; cursor:pointer;}
-  .item-card.previewing{border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-soft);}
-  .item-card-header{display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:800; color:var(--primary); margin-bottom:6px;}
-  .item-remove-btn{border:none; background:var(--red-soft); color:var(--red); font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; cursor:pointer;}
-  .item-copy-btn{border:none; background:var(--primary-soft); color:var(--primary); font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; cursor:pointer;}
-  .item-add-btn{width:100%; border:1.5px dashed var(--border); background:transparent; color:var(--text-soft); font-size:12.5px; font-weight:700; padding:10px; border-radius:12px; cursor:pointer; margin-bottom:12px;}
+  .item-card{border:1px solid var(--border); border-radius:18px; padding:14px 16px; margin-bottom:12px; background:#fff; cursor:pointer;}
+  .item-card.previewing{border-color:#BDB7B1; box-shadow:0 0 0 3px var(--primary-soft);}
+  .item-card-header{display:flex; align-items:center; justify-content:space-between; font-size:12.5px; font-weight:700; color:var(--text); margin-bottom:6px;}
+  .item-remove-btn{border:none; background:var(--red-soft); color:var(--red); font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:999px; cursor:pointer;}
+  .item-copy-btn{border:1px solid var(--border); background:#fff; color:var(--text); font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:999px; cursor:pointer;}
+  .item-add-btn{width:100%; border:1.5px dashed #DAD6D1; background:transparent; color:var(--text-soft); font-size:12.5px; font-weight:600; padding:11px; border-radius:999px; cursor:pointer; margin-bottom:12px; font-family:inherit;}
   .item-add-btn:hover{border-color:var(--primary); color:var(--primary);}
   .add-item-btn{
-    width:100%; border:1.5px dashed var(--border); background:transparent; color:var(--primary);
-    padding:11px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; margin-top:4px;
+    width:100%; border:1.5px dashed #DAD6D1; background:transparent; color:var(--primary);
+    padding:11px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; margin-top:4px;
   }
   .add-item-btn:hover{background:var(--primary-soft);}
+
+  /* ---------- 스킴 / T&D 추천 ---------- */
+  .scheme-btn{border:1px solid var(--border); background:#fff; color:var(--text); font-family:inherit; font-size:12.5px; font-weight:600; padding:0 16px; height:42px; border-radius:999px; cursor:pointer;}
+  .scheme-btn:hover{background:var(--primary-soft);}
+  .field-input::placeholder{color:#ABA6A0; opacity:1;}
+  .tnd-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; background:#F5F3EF; border:1px dashed #CFCAC4; border-radius:14px; padding:9px 10px 9px 14px; margin:0 0 14px; font-size:11.5px; color:#6B6560;}
+  .tnd-bar b{color:#8E8984;}
+  .tnd-use-btn{flex:0 0 auto; border:none; background:var(--primary); color:#fff; font-family:inherit; font-size:11.5px; font-weight:600; padding:8px 14px; border-radius:999px; cursor:pointer;}
+  .tnd-use-btn:hover{background:var(--primary-dark);}
+  .scheme-textarea{width:100%; min-height:200px; resize:vertical; font-family:'Noto Sans KR'; font-size:13px; line-height:1.6; border:1px solid var(--border); background:#F7F6F4; border-radius:14px; padding:12px 14px; color:var(--text);}
+  .scheme-textarea:focus{outline:none; border-color:#BDB7B1; background:#fff;}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:860px){
+    body{padding:0; align-items:stretch;}
+    .shell{height:auto; min-height:100vh; border-radius:0; flex-direction:column; padding:8px;}
+    .sidebar{width:100%; flex:none;}
+    .channel-tabs{flex-direction:row; flex-wrap:wrap;}
+    .channel-tab{width:auto;}
+    .sidebar-card{display:none;}
+    .main{overflow:visible; padding:18px 16px 24px;}
+    .grid > .card:last-child{position:static;}
+  }
 </style>
 </head>
 <body>
@@ -239,14 +317,28 @@
   <aside class="sidebar">
     <div class="brand"><span class="brand-mark">✓</span> AD REVIEW</div>
 
-    <div class="nav-label">채널 선택</div>
-    <div class="channel-tabs" id="channelTabs"></div>
+    <div class="nav-panel">
+      <div class="nav-label">채널 선택</div>
+      <div class="channel-tabs" id="channelTabs"></div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-card-head">
+        <div class="sidebar-card-ring"></div>
+        <div>
+          <div class="sidebar-card-title">사전 검수 도구</div>
+          <div class="sidebar-card-desc">최종 승인/반려는 각 플랫폼 심사 기준을 따릅니다</div>
+        </div>
+      </div>
+      <button type="button" class="sidebar-card-btn" onclick="document.getElementById('settingsBtn').click()">⚙ API 키 · 시트 설정</button>
+    </div>
   </aside>
 
   <main class="main">
     <div class="topbar">
       <h1 id="pageTitle">검수 데스크</h1>
       <div class="topbar-icons">
+        <button type="button" class="scheme-btn" id="schemeBtn">✨ 행사 스킴 · T&amp;D 추천</button>
         <div class="icon-btn" id="settingsBtn" style="cursor:pointer;">⚙</div>
         <div class="icon-btn">i</div>
       </div>
@@ -288,6 +380,25 @@
   </main>
 </div>
 
+<div class="modal-overlay" id="schemeModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-header">
+      <span>✨ 행사 스킴 → T&amp;D 추천</span>
+      <button class="modal-close" id="closeScheme">✕</button>
+    </div>
+    <div class="note-box" style="margin-bottom:10px;">
+      행사당 한 번만 입력하면 돼. 구글 시트의 이전 T&amp;D(매체별 탭 최신 행)를 읽어서, <b>모든 매체</b> 입력칸에 추천 문구를 <b>회색 글씨</b>로 넣어줘.
+      그대로 쓰려면 각 매체 화면의 "추천 문구 그대로 쓰기"를 누르고, 아니면 참고만 하고 직접 입력하면 돼.
+    </div>
+    <textarea id="schemeInput" class="scheme-textarea" placeholder="예) 행사: 더 플렌더 MAX 김영철 KOL 라이브&#10;일정: 11/24(화) 밤 7시, 사전 알림 ~11/23&#10;혜택: 블랙프라이데이 역마진 특가, 라이브 한정 경품&#10;채널: 네이버 쇼핑라이브 ..."></textarea>
+    <div id="schemeStatus" style="font-size:12px; color:var(--text-soft); min-height:18px; margin-top:8px;"></div>
+    <div class="btn-row" style="margin:10px 0 0;">
+      <button type="button" class="apply-bulk-btn" id="schemeClearBtn">추천 지우기</button>
+      <button type="button" class="apply-bulk-btn dark" id="schemeRunBtn">이전 T&amp;D 읽고 추천 받기</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="settingsModal" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
@@ -317,6 +428,7 @@
     <div class="sheet-map-row"><div class="field-label">GFA(피드/스마트채널/쇼핑소식)</div><input type="text" id="sheetGid_gfa" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">구글 디맨드젠</div><input type="text" id="sheetGid_gdemand" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">메타</div><input type="text" id="sheetGid_meta" class="field-input" placeholder="gid"></div>
+    <div class="sheet-map-row"><div class="field-label">당근</div><input type="text" id="sheetGid_daangn" class="field-input" placeholder="gid"></div>
     <div class="sheet-map-row"><div class="field-label">네이버 밴드(새소식/밴드홈/내밴드목록)</div><input type="text" id="sheetGid_band" class="field-input" placeholder="gid"></div>
     <button class="submit-btn" id="saveApiKeyBtn" style="margin-top:12px;">저장</button>
     <div id="apiKeyStatus" style="text-align:center; font-size:12px; color:var(--mint); margin-top:8px; min-height:16px;"></div>
@@ -351,9 +463,9 @@ const CHANNELS = {
   brand_image: {
     label:'브랜드검색(이미지형)', unit:'char', dotColor:'#03C75A', dotText:'N', brandCopyFormat:true,
     groups:[
-      {name:'소재 정보', fields:[['행사명', null],['배경색(RGB)', null]]},
+      {name:'소재 정보', fields:[['행사명', null]]},
       {name:'PC', fields:[['새소식',36],['메인타이틀',18],['설명문구',23],['설명문구',23],['서브링크1',21],['서브링크2',21],['서브링크3',21],['섬네일문구',8],['섬네일문구',8],['섬네일문구',8]]},
-      {name:'MO', fields:[['새소식',18],['서브타이틀',15],['타이틀',14],['설명문구',17],['설명문구',17],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7]]}
+      {name:'MO', fields:[['새소식',18],['서브타이틀',15],['타이틀',14],['설명문구',17],['설명문구',17],['섬네일문구',7],['섬네일문구',7],['섬네일문구',7]]}
     ],
     spec:null, noImageReview:true
   },
@@ -368,13 +480,13 @@ const CHANNELS = {
   },
   bizboard: {
     label:'카카오 비즈보드', unit:'char', dotColor:'#3C1E1E', dotText:'K', repeatable:true, hasEventName:true,
-    dashboardUrl:'https://moment.kakao.com/dashboard/362302', dashboardLabel:'카카오모먼트 광고관리자 열기',
+    dashboardUrl:'https://moment.kakao.com/dashboard/362302', dashboardLabel:'카카오모먼트 열기',
     groups:[
       {name:'소재 정보', fields:[['소재명', null]]},
       {name:'카피', fields:[['메인카피', null],['서브카피', null]]}
     ],
-    spec:{sizes:[[315,258]], minKB:0, maxKB:150, transparentPngRequired:true},
-    specHint:'이미지 규격: 315×258px · 투명 PNG 필수 · 용량 150KB 이하',
+    spec:{sizes:[[314,300]], minKB:0, maxKB:150, transparentPngRequired:true},
+    specHint:'이미지 규격: 314×300px · 투명 PNG 필수 · 용량 150KB 이하',
     note:'메인카피(필수)·서브카피(선택)는 동일 문구로 작성 불가 · 카피 또는 오브젝트 이미지에 광고주체(브랜드명) 표기 필수 · 픽셀폭 한도는 15% 안전마진 적용된 보수적 추정치(오브젝트 이미지 크기에 따라 실제 한도가 다를 수 있음) — 실제로 반려당하면 그 문구 알려줘서 재보정 가능'
   },
   gfa_combined: {
@@ -420,6 +532,16 @@ const CHANNELS = {
     spec:{sizes:[[960,1200],[1200,1200],[1200,628]], minKB:0, maxKB:5120},
     specHint:'이미지 규격: 960×1200 / 1200×1200 / 1200×628px 중 하나 · 용량 최대 5MB',
     note:'짧은/긴 광고 제목에 느낌표·기호·구두점 사용 불가, 영어 대문자 연속 사용 불가'
+  },
+  daangn: {
+    label:'당근 피드 광고', unit:'char', dotColor:'#FF6F0F', dotText:'당', repeatable:true, hasEventName:true, daangnPolicy:true,
+    groups:[
+      {name:'소재 정보', fields:[['소재명', null]]},
+      {name:'광고', fields:[['광고 제목',30]]}
+    ],
+    spec:{squareMin:200, minKB:0, maxKB:10240},
+    specHint:'이미지 규격: 1:1 정사각형 · 최소 200×200px · JPG/JPEG/PNG · 10MB 이하 · 이미지 내 텍스트가 50% 이상이면 승인 불가',
+    note:'근거: 당근 비즈스쿨 전문가모드 광고 제작 및 심사 가이드 · 광고 제목 최대 30자 · 제목에 전화번호, 한글/영어 외 문자, 이름·단어·특수문자 불필요한 반복 불가 · 과장 표현(1위/최고/유일/최대/최초)은 증빙 없으면 불가 · 랜딩에서 가격 확인 가능해야 함'
   },
   band_news: {
     label:'밴드 새소식', unit:'char', dotColor:'#00C73C', dotText:'B', bandCopyFormat:true, bandPolicy:true,
@@ -469,14 +591,31 @@ function byteLen(str){
    채널별로 설정된 gid가 있으면: 그 gid 탭에 각 채널의 기존 "복사" 버튼과 완전히 같은 행 구성으로
    새 행을 이어붙임(append) — 팀이 그동안 복사→붙여넣기 해온 시트 포맷을 그대로 재현.
    gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
-const DEFAULT_GOOGLE_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
-const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109', band:'' };
+const DEFAULT_GOOGLE_CLIENT_ID = '267235599647-qh0olcgerlv33uc1q0tt07aq0jdo0gpn.apps.googleusercontent.com';
+const DEFAULT_GOOGLE_SHEET_ID = '1O85baUUaer5vcSOZhxhlZ4IeeAEqDBP6fDab1SmMdiE';
+/* 2026-11-23 시트 이전: 예전 기본 스프레드시트/gid를 설정에서 "저장"했던 브라우저는 localStorage에 옛 값이
+   그대로 남아 새 기본값이 안 먹으므로, 옛 기본값과 똑같은 저장값만 한 번 지워서 새 기본값을 따르게 함
+   (사용자가 직접 다른 값으로 바꿔둔 건 건드리지 않음) */
+(function migrateSheetSettings(){
+  try{
+    if(localStorage.getItem('sheet_settings_v') === '2') return;
+    const OLD_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
+    const OLD_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109' };
+    if((localStorage.getItem('google_spreadsheet_id') || '').trim() === OLD_SHEET_ID) localStorage.removeItem('google_spreadsheet_id');
+    Object.entries(OLD_GIDS).forEach(([k, v])=>{
+      if((localStorage.getItem(`sheet_gid_${k}`) || '').trim() === v) localStorage.removeItem(`sheet_gid_${k}`);
+    });
+    localStorage.setItem('sheet_settings_v', '2');
+  }catch(e){}
+})();
+const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109', daangn:'491027119', band:'' };
 const SHEET_GID_FIELD_MAP = {
   brand: ['brand_video', 'brand_image'],
   bizboard: ['bizboard'],
   gfa: ['gfa_feed', 'gfa_smart', 'gfa_shopping'],
   gdemand: ['gdemand'],
   meta: ['meta'],
+  daangn: ['daangn'],
   band: ['band_news', 'band_home', 'band_list']
 };
 
@@ -494,7 +633,7 @@ function getSheetGidForChannel(channelKey){
    "빈 줄 2개 이상 나오면 그 다음이 항목 시작"으로 추측하던 이전 방식은, 항목 하나가 병합 셀 때문에
    여러 행에 걸쳐 있으면(예: 메타) 그 병합으로 생기는 빈 행을 실제 항목 사이 여백으로 착각해서
    엉뚱한 위치(예: 147번째 행)에 꽂히는 문제가 있었음 */
-const SHEET_HEADER_MARKER = { brand:'PC', bizboard:'행사명', meta:'행사명', gfa:'행사명' };
+const SHEET_HEADER_MARKER = { brand:'PC', meta:'행사명', gfa:'행사명', daangn:'당근마켓' }; // bizboard는 마커 없이 '맨 위 안내 영역 다음 첫 항목' 위에 삽입
 
 function getSheetHeaderMarkerForChannel(channelKey){
   for(const [fieldKey, channels] of Object.entries(SHEET_GID_FIELD_MAP)){
@@ -508,7 +647,7 @@ let googleTokenClientId = null;
 let googleAccessToken = null;
 
 function getGoogleTokenClient(){
-  const clientId = localStorage.getItem('google_client_id');
+  const clientId = (localStorage.getItem('google_client_id') || DEFAULT_GOOGLE_CLIENT_ID);
   if(!clientId){
     throw new Error('구글 OAuth 클라이언트 ID가 설정되지 않았어. ⚙ 설정에서 입력해줘.');
   }
@@ -533,7 +672,7 @@ function getGoogleTokenClient(){
    그게 안 될 때만(구글 세션이 없거나 최초 1회) 로그인 동의창을 띄움 */
 function getGoogleAccessToken(){
   const cached = JSON.parse(localStorage.getItem('google_access_token_cache') || 'null');
-  if(cached && cached.clientId === localStorage.getItem('google_client_id') && cached.expiresAt > Date.now() + 60000){
+  if(cached && cached.clientId === (localStorage.getItem('google_client_id') || DEFAULT_GOOGLE_CLIENT_ID) && cached.expiresAt > Date.now() + 60000){
     googleAccessToken = cached.token;
     return Promise.resolve(cached.token);
   }
@@ -556,7 +695,7 @@ function getGoogleAccessToken(){
       googleAccessToken = resp.access_token;
       const expiresAt = Date.now() + (Number(resp.expires_in) > 0 ? Number(resp.expires_in) * 1000 : 55 * 60 * 1000);
       localStorage.setItem('google_access_token_cache', JSON.stringify({
-        token: googleAccessToken, expiresAt, clientId: localStorage.getItem('google_client_id')
+        token: googleAccessToken, expiresAt, clientId: (localStorage.getItem('google_client_id') || DEFAULT_GOOGLE_CLIENT_ID)
       }));
       resolve(googleAccessToken);
     };
@@ -685,7 +824,7 @@ function findInsertionPoint(colBValues, marker){
 }
 
 const SHEET_GAP_ROWS = 2; // 항목 사이에 띄우는 기본 빈 줄 수
-const SHEET_GAP_ROWS_OVERRIDE = { meta: 0, gfa: 0 }; // 채널별로 다르게 띄우고 싶으면 여기서 재정의
+const SHEET_GAP_ROWS_OVERRIDE = { meta: 0, gfa: 0, bizboard: 3, daangn: 1 }; // 채널별로 다르게 띄우고 싶으면 여기서 재정의
 
 function getSheetGapRowsForChannel(channelKey){
   for(const [fieldKey, channels] of Object.entries(SHEET_GID_FIELD_MAP)){
@@ -710,37 +849,70 @@ function applyBrandSearchCountFormulas(rows, insertRow0){
     if(i < 2) return row; // 1번째=소재명 행, 2번째=PC/MO 제목 행은 그대로 둠
     const sheetRow = insertRow0 + i + 1; // 0-based insertRow0 → 이 행의 1-based 실제 시트 행 번호
     const newRow = row.slice();
-    if(newRow.length > 2 && newRow[1] !== '') newRow[2] = `=LEN(C${sheetRow})`;
-    if(newRow.length > 6 && newRow[5] !== '') newRow[6] = `=LEN(G${sheetRow})`;
+    if(newRow.length > 2 && newRow[0] !== '') newRow[2] = `=LEN(C${sheetRow})`;
+    if(newRow.length > 6 && newRow[4] !== '') newRow[6] = `=LEN(G${sheetRow})`;
     return newRow;
   });
 }
 
-/* 브랜드검색 전용 — 구분용 빈 줄은 항상 흰색으로, 글자수 칸(D열/H열)은 정수 서식+우측 정렬로 통일 */
+/* 브랜드검색 전용 서식(2026-11-23 사용자 지정 HEX 그대로, 테마색 대체 금지)
+   행 구성: [0] 행사명 제목행(B=행사명, C=배경색) / [1] 표 제목행(B='PC', F='MO') / [2~] 데이터 행
+   열 구성: 왼쪽 PC 표 = B(소재 구분+괄호 수치) C(문구 원문) D(글자수), E = 표 사이 빈 칸,
+            오른쪽 MO 표 = F(소재 구분+괄호 수치) G(문구 원문) H(글자수)
+   - 행사 제목 셀(B): #FFF2CC 배경, 검정, 굵게
+   - 각 표 첫 번째 열(B/F 데이터 행): #1C4587 배경, 흰 글씨, 굵게
+   - 문구/수치 셀(C,D,G,H): #FFFFFF 배경, 검정
+   - 표 제목 'PC'/'MO': 흰 배경, 검정, 굵게
+   - 표 테두리: 검정 실선(SOLID, 얇게) — 표 제목행부터 데이터 끝까지, PC/MO 표 각각 */
 function buildBrandSearchFormatRequests(sheetId, insertRow0, rows){
-  const dataStart0 = insertRow0 + 2; // 1번째=소재명 행, 2번째=PC/MO 행, 나머지가 데이터 행
+  const hex = h => ({ red: parseInt(h.slice(1,3),16)/255, green: parseInt(h.slice(3,5),16)/255, blue: parseInt(h.slice(5,7),16)/255 });
+  const WHITE = hex('#FFFFFF'), BLACK = hex('#000000'), YELLOW = hex('#FFF2CC'), NAVY = hex('#1C4587');
+  const BORDER = { style:'SOLID', width:1, color: BLACK };
+  const titleRow0 = insertRow0, headRow0 = insertRow0 + 1, dataStart0 = insertRow0 + 2;
   const dataEnd0 = insertRow0 + rows.length;
-  const WHITE = { red: 1, green: 1, blue: 1 };
-  const countFormat = { numberFormat:{ type:'NUMBER', pattern:'0' }, horizontalAlignment:'RIGHT' };
-  const countFields = 'userEnteredFormat.numberFormat,userEnteredFormat.horizontalAlignment';
+  const fmt = (bg, fg, bold, extra) => ({ userEnteredFormat: Object.assign({
+    backgroundColor: bg, textFormat:{ foregroundColor: fg, bold: !!bold }
+  }, extra || {}) });
+  const FIELDS = 'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.bold';
+  const cellReq = (r0, r1, c0, c1, cell, fields) => ({ repeatCell:{
+    range:{ sheetId, startRowIndex:r0, endRowIndex:r1, startColumnIndex:c0, endColumnIndex:c1 }, cell, fields: fields || FIELDS
+  }});
 
-  return [
-    { repeatCell:{
-        range:{ sheetId, startRowIndex: dataEnd0, endRowIndex: dataEnd0 + SHEET_GAP_ROWS, startColumnIndex: 1, endColumnIndex: 8 },
-        cell:{ userEnteredFormat:{ backgroundColor: WHITE } },
-        fields:'userEnteredFormat.backgroundColor'
-    }},
-    { repeatCell:{
-        range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 3, endColumnIndex: 4 },
-        cell:{ userEnteredFormat: countFormat },
-        fields: countFields
-    }},
-    { repeatCell:{
-        range:{ sheetId, startRowIndex: dataStart0, endRowIndex: dataEnd0, startColumnIndex: 7, endColumnIndex: 8 },
-        cell:{ userEnteredFormat: countFormat },
-        fields: countFields
-    }}
-  ];
+  const req = [];
+  // 0) 삽입된 영역 전체(제목행~구분용 빈 줄)를 흰 배경·검정·보통 굵기·테두리 없음으로 초기화 — 위/아래 행 서식 상속 방지
+  req.push(cellReq(titleRow0, dataEnd0 + SHEET_GAP_ROWS, 1, 8, fmt(WHITE, BLACK, false), FIELDS));
+  req.push({ updateBorders:{
+    range:{ sheetId, startRowIndex:titleRow0, endRowIndex:dataEnd0 + SHEET_GAP_ROWS, startColumnIndex:1, endColumnIndex:8 },
+    top:{style:'NONE'}, bottom:{style:'NONE'}, left:{style:'NONE'}, right:{style:'NONE'}, innerHorizontal:{style:'NONE'}, innerVertical:{style:'NONE'}
+  }});
+  // 1) 행사 제목 셀
+  req.push(cellReq(titleRow0, titleRow0 + 1, 1, 2, fmt(YELLOW, BLACK, true)));
+  // 2) 표 제목 'PC' / 'MO'
+  req.push(cellReq(headRow0, headRow0 + 1, 1, 2, fmt(WHITE, BLACK, true)));
+  req.push(cellReq(headRow0, headRow0 + 1, 5, 6, fmt(WHITE, BLACK, true)));
+  // 3) 데이터 행: 소재 구분 칸은 남색(값이 있는 칸만), 글자수 칸은 정수·우측 정렬
+  rows.slice(2).forEach((row, i)=>{
+    const r0 = dataStart0 + i;
+    if(row[0]) req.push(cellReq(r0, r0 + 1, 1, 2, fmt(NAVY, WHITE, true)));
+    if(row[4]) req.push(cellReq(r0, r0 + 1, 5, 6, fmt(NAVY, WHITE, true)));
+  });
+  if(dataEnd0 > dataStart0){
+    const countCell = { userEnteredFormat:{ numberFormat:{ type:'NUMBER', pattern:'0' }, horizontalAlignment:'RIGHT' } };
+    const countFields = 'userEnteredFormat.numberFormat,userEnteredFormat.horizontalAlignment';
+    req.push(cellReq(dataStart0, dataEnd0, 3, 4, countCell, countFields));
+    req.push(cellReq(dataStart0, dataEnd0, 7, 8, countCell, countFields));
+  }
+  // 4) 표 테두리 — 각 표에서 실제 값이 있는 마지막 행까지만
+  const lastRowWith = col => { let last = -1; rows.slice(2).forEach((r, i)=>{ if(r[col]) last = i; }); return last; };
+  [[1, 4, 0], [5, 8, 4]].forEach(([c0, c1, labelCol])=>{
+    const last = lastRowWith(labelCol);
+    const end0 = last >= 0 ? dataStart0 + last + 1 : headRow0 + 1;
+    req.push({ updateBorders:{
+      range:{ sheetId, startRowIndex:headRow0, endRowIndex:end0, startColumnIndex:c0, endColumnIndex:c1 },
+      top:BORDER, bottom:BORDER, left:BORDER, right:BORDER, innerHorizontal:BORDER, innerVertical:BORDER
+    }});
+  });
+  return req;
 }
 
 /* 카카오 비즈보드 전용 — 실제 시트처럼 [제목행: 행사명 B열만 살구색] [행사명 열 전체 병합] [구좌 열 전체 병합] */
@@ -795,7 +967,7 @@ function buildBizboardMergeRequests(sheetId, insertRow0, rows){
    배경색/테두리까지 이미 다 직접 지정하는 경우, "밀려난 원래 항목"에서 서식(+병합 상태)을 그대로 복사해오면
    그 원래 항목의 병합 범위가 새로 들어간 행 개수와 다를 때 병합 경계가 어긋나면서 바로 아래 있던 기존
    블록까지 같이 깨지는 문제가 있었음(항목 개수가 매번 달라지는 GFA 통합 표에서 실제로 발생) */
-async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, skipFormatCopy, forceInsertAtTop, leadingBlankRows, formatSourceRow0){
+async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, skipFormatCopy, forceInsertAtTop, leadingBlankRows, formatSourceRow0, belowFrozenOffset){
   if(gapRows == null) gapRows = SHEET_GAP_ROWS;
   if(leadingBlankRows == null) leadingBlankRows = 0;
   const token = await getGoogleAccessToken();
@@ -816,11 +988,19 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
   // 매번 새 제목+헤더+데이터를 맨 위에 통째로 새로 만들어 넣는 방식으로 바꿈.
   // leadingBlankRows가 있으면 그 삽입 지점(insertStart0)과 실제 제목행이 시작되는 자리(insertRow0)가
   // 갈라짐 — 그 사이(insertStart0~insertRow0)는 빈 여백 행으로 남음
-  const insertStart0 = forceInsertAtTop ? 0 : findInsertionPoint(await getColumnBValues(token, spreadsheetId, sheetTitle), headerMarker);
+  // belowFrozenOffset(숫자)가 주어지면 탭의 "고정된 행" 개수 기준으로 위치를 정함 — 예: 4면 고정 행 바로
+  // 아래부터 세어 5번째 행에 삽입(브랜드검색, 2026-11-23 사용자 지정)
+  const frozenRows = (props.gridProperties && props.gridProperties.frozenRowCount) || 0;
+  const insertStart0 = belowFrozenOffset != null ? frozenRows + belowFrozenOffset
+    : forceInsertAtTop ? 0 : findInsertionPoint(await getColumnBValues(token, spreadsheetId, sheetTitle), headerMarker);
   const insertRow0 = insertStart0 + leadingBlankRows;
 
   // 실제 들어갈 행 번호를 알아야만 만들 수 있는 값(예: =LEN(C12) 같은 수식)이 있으면 여기서 교체
-  if(transformRows) rows = transformRows(rows, insertRow0);
+  if(transformRows){
+    const layout = rows._layout;
+    rows = transformRows(rows, insertRow0);
+    if(layout && !rows._layout) rows._layout = layout;
+  }
 
   const startCol0 = 1; // B열부터 (A열은 항상 빈 여백 칸)
   const maxCols = Math.max(1, ...rows.map(r => r.length));
@@ -884,9 +1064,10 @@ async function appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeReq
       console.error('셀 병합 실패(값/서식은 정상적으로 들어감):', e);
     }
   }
+  return insertRow0 + 1; // 실제로 들어간 시작 행 번호(1-based) — 완료 표시에 씀
 }
 
-function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, transformRows, forceInsertAtTop, leadingBlankRows, skipFormatCopy, formatSourceRow0){
+function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, transformRows, forceInsertAtTop, leadingBlankRows, skipFormatCopy, formatSourceRow0, belowFrozenOffset){
   btn.addEventListener('click', async ()=>{
     const orig = btn.textContent;
     btn.disabled = true;
@@ -898,12 +1079,13 @@ function wireGoogleSheetExportBtn(btn, getRows, title, buildMergeRequests, trans
       const gapRows = getSheetGapRowsForChannel(currentChannel);
       const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
       if(gid && spreadsheetId){
-        await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, !!skipFormatCopy, forceInsertAtTop, leadingBlankRows, formatSourceRow0);
+        const startRow = await appendRowsToSheetTabByGid(spreadsheetId, gid, rows, buildMergeRequests, transformRows, headerMarker, gapRows, !!skipFormatCopy, forceInsertAtTop, leadingBlankRows, formatSourceRow0, belowFrozenOffset);
+        btn.textContent = `완료! (${startRow}행부터)`;
       }else{
         await exportRowsToGoogleSheet(rows, title);
+        btn.textContent = '완료!';
       }
-      btn.textContent = '완료!';
-      setTimeout(()=>{ btn.textContent = orig; }, 1200);
+      setTimeout(()=>{ btn.textContent = orig; }, 4000);
     }catch(e){
       alert(e.message || '구글 시트 내보내기 실패');
       btn.textContent = orig;
@@ -965,6 +1147,10 @@ Object.keys(CHANNELS).forEach(key=>{
     if(CHANNELS[key].hasEventName) channelData[key].eventName = '';
   }
 });
+// 카카오 디스플레이(선택) — 비즈보드 화면에서 같이 입력해서 같은 표(디스플레이 구좌 → 비즈보드 구좌)로 내보냄
+const KAKAO_DISPLAY_FIELDS = [['파일명', null, 'fileName'], ['타이틀', 25, 'title'], ['홍보문구', 45, 'promo']];
+const makeBlankDisplayItem = ()=>({ fileName:'', title:'', promo:'' });
+channelData.bizboard.displayItems = [];
 
 function makeBlankItem(key){
   const item = {};
@@ -1049,7 +1235,8 @@ function renderStatCards(){
     el.textContent = '소재를 입력하고 검수 요청을 눌러줘';
     return;
   }
-  const sizeText = spec.sizes ? spec.sizes.map(s=>s.join('×')+'px').join(' / ') : '규격 무관';
+  const sizeText = spec.sizes ? spec.sizes.map(s=>s.join('×')+'px').join(' / ')
+    : spec.squareMin ? `1:1 · 최소 ${spec.squareMin}×${spec.squareMin}px` : '규격 무관';
   const kbText = (spec.minKB || spec.maxKB)
     ? `${spec.minKB || 0}KB~${spec.maxKB ? (spec.maxKB>=1024 ? (spec.maxKB/1024)+'MB' : spec.maxKB+'KB') : '제한없음'}`
     : '용량 제한 없음';
@@ -1089,7 +1276,6 @@ function renderForm(){
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'apply-bulk-btn';
-    copyBtn.style.marginBottom = '14px';
     copyBtn.textContent = '📋 복사 (PC/MO 표 형식)';
     copyBtn.addEventListener('click', async ()=>{
       const text = generateBrandSearchCopyText(cfg);
@@ -1108,27 +1294,25 @@ function renderForm(){
       }
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
-    area.appendChild(copyBtn);
 
     const exportBtn = document.createElement('button');
     exportBtn.type = 'button';
     exportBtn.className = 'apply-bulk-btn';
-    exportBtn.style.marginBottom = '14px';
-    exportBtn.style.background = 'var(--mint)';
+    exportBtn.classList.add('dark');
     exportBtn.textContent = '📄 구글 시트로 내보내기';
     // forceInsertAtTop:true — 마커('PC') 기반 삽입은 내보내기마다 자기 자신의 PC/MO 헤더 행이
     // 새로 생기면서 그 글자를 "처음 나오는 PC"로 잘못 찾아, 두 번째 내보내기부터 직전 항목의
     // 헤더 행과 데이터 행 사이로 새 항목이 끼어드는 문제가 있었음. GFA/gdemand와 같이 매번
     // 맨 위(0행)에 통째로 새로 꽂아 넣는 방식으로 통일함.
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateBrandSearchRows(cfg), `${cfg.label} 소재`, buildBrandSearchFormatRequests, applyBrandSearchCountFormulas, true);
-    area.appendChild(exportBtn);
+    // 고정된 행 아래 5번째 행(belowFrozenOffset=4)에 삽입, 서식은 템플릿 복사 대신 buildBrandSearchFormatRequests가 HEX로 직접 지정
+    wireGoogleSheetExportBtn(exportBtn, ()=>{ ensureBrandEventName(cfg); return generateBrandSearchRows(cfg); }, `${cfg.label} 소재`, buildBrandSearchFormatRequests, applyBrandSearchCountFormulas, false, 0, true, null, 4);
+    appendBtnRow(area, copyBtn, exportBtn);
   }
 
   if(cfg.simpleCopyFormat){
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'apply-bulk-btn';
-    copyBtn.style.marginBottom = '14px';
     copyBtn.textContent = '📋 복사';
     copyBtn.addEventListener('click', async ()=>{
       const text = generateSimpleCopyLine(cfg);
@@ -1147,17 +1331,15 @@ function renderForm(){
       }
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
-    area.appendChild(copyBtn);
 
     const exportBtn = document.createElement('button');
     exportBtn.type = 'button';
     exportBtn.className = 'apply-bulk-btn';
-    exportBtn.style.marginBottom = '14px';
-    exportBtn.style.background = 'var(--mint)';
+    exportBtn.classList.add('dark');
     exportBtn.textContent = '📄 구글 시트로 내보내기';
     wireGoogleSheetExportBtn(exportBtn, ()=>generateSimpleCopyRows(cfg), `${cfg.label} 소재`, null,
       currentChannel === 'meta' ? (rows)=>applyMetaColumnLayout(rows) : null);
-    area.appendChild(exportBtn);
+    appendBtnRow(area, copyBtn, exportBtn);
   }
 
   if(cfg.bandCopyFormat){
@@ -1167,7 +1349,6 @@ function renderForm(){
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'apply-bulk-btn';
-    copyBtn.style.marginBottom = '14px';
     copyBtn.textContent = '📋 복사';
     copyBtn.addEventListener('click', async ()=>{
       const text = generateBandCopyLine(cfg);
@@ -1186,23 +1367,20 @@ function renderForm(){
       }
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
-    area.appendChild(copyBtn);
 
     const exportBtn = document.createElement('button');
     exportBtn.type = 'button';
     exportBtn.className = 'apply-bulk-btn';
-    exportBtn.style.marginBottom = '14px';
-    exportBtn.style.background = 'var(--mint)';
+    exportBtn.classList.add('dark');
     exportBtn.textContent = '📄 구글 시트로 내보내기';
     wireGoogleSheetExportBtn(exportBtn, ()=>generateBandCopyRows(cfg), `${cfg.label} 소재`, null, null);
-    area.appendChild(exportBtn);
+    appendBtnRow(area, copyBtn, exportBtn);
   }
 
   if(cfg.gdemandCopyFormat){
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'apply-bulk-btn';
-    copyBtn.style.marginBottom = '14px';
     copyBtn.textContent = '📋 복사';
     copyBtn.addEventListener('click', async ()=>{
       const text = generateGdemandCopyText(cfg);
@@ -1221,20 +1399,16 @@ function renderForm(){
       }
       setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
     });
-    area.appendChild(copyBtn);
 
     const exportBtn = document.createElement('button');
     exportBtn.type = 'button';
     exportBtn.className = 'apply-bulk-btn';
-    exportBtn.style.marginBottom = '14px';
-    exportBtn.style.background = 'var(--mint)';
+    exportBtn.classList.add('dark');
     exportBtn.textContent = '📄 구글 시트로 내보내기';
-    // 서식은 기준 서식 블록에서 그대로 복사해옴 — 여기 적은 숫자는 "저장된 값이 아직 없을 때"의
-    // 최초 시작값일 뿐이고, 실제로는 내보내기 때마다 getPersistedFormatSourceRow0가 계산해낸 현재
-    // 위치를 이어받아 씀(2026-09-10 기준 실측: 90~104행 = 0-based 89). 블록을 지우거나 다른 곳으로
-    // 옮기면 이 숫자도 그 시점의 실제 위치로 다시 맞춰야 함
-    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, null, null, true, 2, false, 89);
-    area.appendChild(exportBtn);
+    // 2026-11-23: 기준 블록 서식 복사 방식 → buildGdemandFormatRequests가 HEX 서식을 직접 지정하는 방식으로 변경
+    // (맨 위에 빈 줄 2개 + 표 삽입, 기존 표들은 아래로 밀림)
+    wireGoogleSheetExportBtn(exportBtn, ()=>generateGdemandRows(cfg), `${cfg.label} 소재`, buildGdemandFormatRequests, applyGdemandCountFormulas, true, 2, true);
+    appendBtnRow(area, copyBtn, exportBtn);
   }
 
   if(cfg.repeatable){
@@ -1456,6 +1630,7 @@ function renderGfaItemsSection(area, key, cfg){
   const addBtn = document.createElement('button');
   addBtn.type = 'button';
   addBtn.className = 'item-add-btn';
+  addBtn.dataset.chan = key;
   addBtn.textContent = '+ 소재 추가';
   addBtn.addEventListener('click', ()=>{
     items.push(makeBlankItem(key));
@@ -1478,7 +1653,7 @@ function renderGfaItemsSection(area, key, cfg){
           row.innerHTML = `
             <div class="field-label">${label}${limit!=null ? ` (${limit}자)` : ''}</div>
             <input type="text" class="field-input" value="${escapeHtml(item[fieldKey] || '')}"
-              data-limit="${limit ?? ''}" data-group="${gi}" data-idx="${fi}" data-item="${itemIdx}" data-label="${label}">
+              data-limit="${limit ?? ''}" data-group="${gi}" data-idx="${fi}" data-item="${itemIdx}" data-label="${label}" data-chan="${key}">
             <div class="field-count">0자</div>
           `;
           card.appendChild(row);
@@ -1527,6 +1702,15 @@ function updateGfaItemCount(inp){
 
 /* 클릭하면 접고 펼치는 섹션 제목 — 소재가 많은 스마트채널/쇼핑소식을 안 볼 때 접어둘 수 있게 */
 /* cfg.dashboardUrl이 설정된 채널이면 그 광고 관리자 페이지로 바로 가는 버튼을 하나 만들어줌 (없으면 null) */
+// 복사/내보내기/광고관리자 버튼을 한 줄로 나란히 묶어서 입력 영역 맨 위(안내문·행사명보다 위)에 배치
+function appendBtnRow(area, ...btns){
+  const row = document.createElement('div');
+  row.className = 'btn-row';
+  btns.forEach(b=>row.appendChild(b));
+  area.prepend(row);
+  return row;
+}
+
 function renderDashboardLinkBtn(cfg){
   if(!cfg.dashboardUrl) return null;
   const a = document.createElement('a');
@@ -1534,7 +1718,7 @@ function renderDashboardLinkBtn(cfg){
   a.target = '_blank';
   a.rel = 'noopener';
   a.className = 'apply-bulk-btn';
-  a.style.cssText = 'display:block; text-align:center; text-decoration:none; margin-bottom:10px; background:#fff; color:var(--primary); border:1.5px solid var(--primary);';
+  a.style.cssText = 'display:flex; align-items:center; justify-content:center; text-align:center; text-decoration:none;';
   a.textContent = `🔗 ${cfg.dashboardLabel || '광고 관리자 열기'}`;
   return a;
 }
@@ -1576,9 +1760,6 @@ function renderGfaCombinedForm(){
   document.getElementById('previewSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
 
-  const dashboardBtn = renderDashboardLinkBtn(CHANNELS.gfa_combined);
-  if(dashboardBtn) area.appendChild(dashboardBtn);
-
   const eventRow = document.createElement('div');
   eventRow.className = 'field-row';
   eventRow.innerHTML = `
@@ -1594,11 +1775,35 @@ function renderGfaCombinedForm(){
   const exportBtn = document.createElement('button');
   exportBtn.type = 'button';
   exportBtn.className = 'apply-bulk-btn';
-  exportBtn.style.marginTop = '8px';
-  exportBtn.style.background = 'var(--mint)';
-  exportBtn.textContent = '📄 전체 구글 시트로 내보내기';
+  exportBtn.classList.add('dark');
+  exportBtn.textContent = '📄 구글 시트 내보내기';
   exportBtn.addEventListener('click', ()=>runGfaCombinedExport(exportBtn));
-  area.appendChild(exportBtn);
+  // 전체 소재 복사 — 시트 내보내기와 같은 데이터 행(행사명/구좌/파일명/광고문구)을 탭 구분으로 복사
+  const copyAllBtn = document.createElement('button');
+  copyAllBtn.type = 'button';
+  copyAllBtn.className = 'apply-bulk-btn';
+  copyAllBtn.textContent = '📋 전체 소재 복사';
+  copyAllBtn.addEventListener('click', async ()=>{
+    const { feedRows, smartRows, shoppingRows } = generateGfaCombinedDataRows();
+    const text = [...feedRows, ...smartRows, ...shoppingRows]
+      .map(r=>r.map(tsvCell).join('\t')).join('\n');
+    const orig = copyAllBtn.textContent;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copyAllBtn.textContent = '✓ 복사됨';
+    setTimeout(()=>{ copyAllBtn.textContent = orig; }, 1200);
+  });
+
+  const dashboardBtn = renderDashboardLinkBtn(CHANNELS.gfa_combined);
+  appendBtnRow(area, ...[copyAllBtn, exportBtn, dashboardBtn].filter(Boolean));
 
   // ---- GFA 피드 ----
   const feedContent = document.createElement('div');
@@ -1795,33 +2000,195 @@ async function runGfaCombinedExport(btn){
   }
 }
 
-/* 카카오 비즈보드 전체 내보내기 — 실제 "광고문구-[SA]" 시트 구조와 동일하게
-   [행사명 단독 행] → [열 제목 행] → 소재별 행(행사명/구좌/소재명/메인카피/서브카피/워싱×2) */
+/* 카카오 전체 내보내기 — 시트 "[DA] 카카오" 탭 구조(2026-11-23 사용자 지정)
+   [제목행: B=행사명]
+   디스플레이가 있으면: [머리글: 행사명|구좌|파일명|타이틀/25|홍보문구/45|워싱|워싱] → 디스플레이 행들
+                        → (비즈보드가 있으면) [머리글2(C~H): 구좌|소재명|메인카피|서브카피|워싱|워싱] → 비즈보드 행들
+   디스플레이가 없으면: [머리글: 행사명|구좌|소재명|메인카피|서브카피|워싱|워싱] → 비즈보드 행들
+   행사명은 첫 데이터 행에만 쓰고 B열 전체 데이터 영역을 세로 병합(buildBizboardMergeRequests).
+   rows._layout에 각 구간 위치(rows 배열 기준 인덱스)를 같이 담아 서식 함수가 씀 */
 function generateBizboardAppendRows(cfg, items){
   const eventName = (channelData[currentChannel].eventName || '').trim();
-  const rows = [
-    [eventName],
-    ['행사명', '구좌', '소재명', '메인카피', '서브카피', '워싱', '워싱']
-  ];
-  items.forEach(item=>{
-    rows.push([
-      eventName,
-      '비즈보드',
+  const nonEmpty = o => Object.values(o).some(v => (v || '').toString().trim() !== '');
+  const disp = (channelData.bizboard.displayItems || []).filter(nonEmpty);
+  const biz = items.filter(nonEmpty);
+  const rows = [[eventName]];
+  const layout = { headers:[], display:null, biz:null };
+  const bizHeader = ['구좌', '소재명', '메인카피', '서브카피', '워싱', '워싱'];
+  if(disp.length){
+    layout.headers.push({ row: rows.length, fromCol: 0 });
+    rows.push(['행사명', '구좌', '파일명', '타이틀/25', '홍보문구/45', '워싱', '워싱']);
+    layout.display = { start: rows.length, end: rows.length + disp.length };
+    disp.forEach(d => rows.push(['', '디스플레이', d.fileName.trim(), d.title.trim(), d.promo.trim(), '', '']));
+    if(biz.length){
+      layout.headers.push({ row: rows.length, fromCol: 1 });
+      rows.push([''].concat(bizHeader));
+    }
+  }else{
+    layout.headers.push({ row: rows.length, fromCol: 0 });
+    rows.push(['행사명'].concat(bizHeader));
+  }
+  if(biz.length){
+    layout.biz = { start: rows.length, end: rows.length + biz.length };
+    biz.forEach(item => rows.push([
+      '', '비즈보드',
       getFieldValueByLabel(cfg, item, 0, '소재명'),
       getFieldValueByLabel(cfg, item, 1, '메인카피'),
       getFieldValueByLabel(cfg, item, 1, '서브카피'),
       '', ''
-    ]);
+    ]));
+  }
+  if(rows.length > 2) rows[2][0] = eventName; // 행사명은 첫 데이터 행에만(병합되면 이 값이 보임)
+  rows._layout = layout;
+  return rows;
+}
+
+/* 카카오 서식 — 지정 HEX 그대로(테마색 대체 금지)
+   제목 B열 #FCE5CD / 머리글 #073763·흰색·굵게·가운데 / 데이터 #FFFFFF·검정·왼쪽·세로 가운데 /
+   행사명 B열 전체 데이터 영역 세로 병합(아래쪽·왼쪽 정렬) / 구좌는 구간별 세로 병합 / 표 전체 검정 얇은 실선 */
+function buildBizboardMergeRequests(sheetId, insertRow0, rows){
+  const L = rows._layout;
+  const hex = h => ({ red: parseInt(h.slice(1,3),16)/255, green: parseInt(h.slice(3,5),16)/255, blue: parseInt(h.slice(5,7),16)/255 });
+  const WHITE = hex('#FFFFFF'), BLACK = hex('#000000'), PEACH = hex('#FCE5CD'), NAVY = hex('#073763');
+  const BORDER = { style:'SOLID', width:1, color: BLACK };
+  const NONE = { style:'NONE' };
+  const C0 = 1, C1 = 8; // B~H
+  const R = i => insertRow0 + i;
+  const lastRow = R(rows.length);
+  const range = (r0, r1, c0, c1) => ({ sheetId, startRowIndex:r0, endRowIndex:r1, startColumnIndex:c0, endColumnIndex:c1 });
+  const FIELDS = 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)';
+  const cell = (bg, fg, bold, h, v) => ({ userEnteredFormat:{ backgroundColor:bg, textFormat:{ foregroundColor:fg, bold:!!bold },
+    horizontalAlignment:h, verticalAlignment:v, wrapStrategy:'OVERFLOW_CELL' } });
+  const req = [];
+  // 0) 삽입 영역 전체 초기화(흰 배경·검정·테두리 없음) — 위아래 행 서식 상속/줄무늬 방지
+  req.push({ repeatCell:{ range: range(R(0), lastRow + SHEET_GAP_ROWS_OVERRIDE.bizboard, C0, C1), cell: cell(WHITE, BLACK, false, 'LEFT', 'MIDDLE'), fields: FIELDS } });
+  req.push({ updateBorders:{ range: range(R(0), lastRow + SHEET_GAP_ROWS_OVERRIDE.bizboard, C0, C1), top:NONE, bottom:NONE, left:NONE, right:NONE, innerHorizontal:NONE, innerVertical:NONE } });
+  // 1) 제목 셀
+  req.push({ repeatCell:{ range: range(R(0), R(1), C0, C0 + 1), cell: cell(PEACH, BLACK, true, 'LEFT', 'MIDDLE'), fields: FIELDS } });
+  // 2) 머리글
+  L.headers.forEach(h => req.push({ repeatCell:{ range: range(R(h.row), R(h.row + 1), C0 + h.fromCol, C1), cell: cell(NAVY, WHITE, true, 'CENTER', 'MIDDLE'), fields: FIELDS } }));
+  // 3) 병합 — 행사명(B열, 첫 머리글 다음 행 ~ 끝), 구좌(C열, 구간별)
+  const dataStart = L.headers[0].row + 1;
+  if(rows.length - dataStart >= 1){
+    if(rows.length - dataStart > 1) req.push({ mergeCells:{ range: range(R(dataStart), lastRow, C0, C0 + 1), mergeType:'MERGE_ALL' } });
+    req.push({ repeatCell:{ range: range(R(dataStart), lastRow, C0, C0 + 1), cell: cell(WHITE, BLACK, false, 'LEFT', 'BOTTOM'), fields: FIELDS } });
+  }
+  [L.display, L.biz].forEach(seg => {
+    if(seg && seg.end - seg.start > 1) req.push({ mergeCells:{ range: range(R(seg.start), R(seg.end), C0 + 1, C0 + 2), mergeType:'MERGE_ALL' } });
+  });
+  // 4) 테두리 — 첫 머리글부터 끝까지 B~H 전체
+  req.push({ updateBorders:{ range: range(R(L.headers[0].row), lastRow, C0, C1), top:BORDER, bottom:BORDER, left:BORDER, right:BORDER, innerHorizontal:BORDER, innerVertical:BORDER } });
+  return req;
+}
+
+/* 당근 시트 "[DA] 당근" 탭 구조(2026-11-23 실제 탭 기준)
+   [머리글: 행사명|유형|소재명|광고제목(30)|워싱(최종)|글자수|파일위치] → 소재별 행
+   행사명(B)·파일위치(H)는 데이터 행 전체 세로 병합, 유형·워싱·파일위치는 비워둠(앱에 입력 없음) */
+function generateDaangnAppendRows(cfg, items){
+  const eventName = (channelData[currentChannel].eventName || '').trim();
+  const filled = items.filter(it => Object.values(it).some(v => (v || '').toString().trim() !== ''));
+  const rows = [['행사명', '유형', '소재명', '광고제목(30)', '워싱(최종)', '글자수', '파일위치']];
+  filled.forEach((item, i)=>{
+    const title = getFieldValueByLabel(cfg, item, 1, '광고 제목');
+    rows.push([i === 0 ? eventName : '', '', getFieldValueByLabel(cfg, item, 0, '소재명'), title, '', '', '']);
   });
   return rows;
+}
+// 글자수(G)는 광고제목(E) 칸을 세는 수식으로
+function applyDaangnCountFormulas(rows, insertRow0){
+  return rows.map((row, i)=>{
+    if(i === 0) return row;
+    const r = row.slice();
+    r[5] = `=LEN(E${insertRow0 + i + 1})`;
+    return r;
+  });
+}
+
+function buildDaangnFormatRequests(sheetId, insertRow0, rows){
+  const hex = h => ({ red: parseInt(h.slice(1,3),16)/255, green: parseInt(h.slice(3,5),16)/255, blue: parseInt(h.slice(5,7),16)/255 });
+  const WHITE = hex('#FFFFFF'), BLACK = hex('#000000'), HEAD = hex('#434343'), HEAD_FG = hex('#F3F3F3');
+  const BORDER = { style:'SOLID', width:1, color: BLACK };
+  const NONE = { style:'NONE' };
+  const B = 1, END = 8; // B~H
+  const R = i => insertRow0 + i;
+  const range = (r0, r1, c0, c1) => ({ sheetId, startRowIndex:r0, endRowIndex:r1, startColumnIndex:c0, endColumnIndex:c1 });
+  const FIELDS = 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)';
+  const fmt = (r0, r1, c0, c1, bg, fg, bold, h) => ({ repeatCell:{ range: range(r0, r1, c0, c1),
+    cell:{ userEnteredFormat:{ backgroundColor:bg, textFormat:{ foregroundColor:fg, bold:!!bold }, horizontalAlignment:h, verticalAlignment:'MIDDLE', wrapStrategy:'OVERFLOW_CELL' } }, fields: FIELDS } });
+  const last = R(rows.length);
+  const gap = SHEET_GAP_ROWS_OVERRIDE.daangn;
+  const req = [];
+  req.push(fmt(R(0), last + gap, B, END, WHITE, BLACK, false, 'LEFT'));
+  req.push({ updateBorders:{ range: range(R(0), last + gap, B, END), top:NONE, bottom:NONE, left:NONE, right:NONE, innerHorizontal:NONE, innerVertical:NONE } });
+  req.push(fmt(R(0), R(1), B, END, HEAD, HEAD_FG, true, 'CENTER'));           // 머리글
+  if(rows.length > 1){
+    req.push(fmt(R(1), last, B, B + 1, WHITE, BLACK, false, 'CENTER'));       // 행사명(굵게 X — 사용자 요청)
+    req.push(fmt(R(1), last, 3, 4, WHITE, BLACK, false, 'CENTER'));           // 소재명
+    req.push(fmt(R(1), last, 6, 7, WHITE, BLACK, false, 'CENTER'));           // 글자수
+    if(rows.length > 2){
+      req.push({ mergeCells:{ range: range(R(1), last, B, B + 1), mergeType:'MERGE_ALL' } });
+      req.push({ mergeCells:{ range: range(R(1), last, 7, 8), mergeType:'MERGE_ALL' } });
+    }
+  }
+  req.push({ updateBorders:{ range: range(R(0), last, B, END), top:BORDER, bottom:BORDER, left:BORDER, right:BORDER, innerHorizontal:BORDER, innerVertical:BORDER } });
+  return req;
+}
+
+/* 카카오 디스플레이(선택) 입력 — 파일명 / 타이틀(25자) / 홍보문구(45자). 시트 내보내기에서 비즈보드보다 먼저 나옴 */
+function renderKakaoDisplaySection(area){
+  const list = channelData.bizboard.displayItems;
+  const title = document.createElement('div');
+  title.className = 'group-title';
+  title.style.marginTop = '22px';
+  title.textContent = '카카오 디스플레이 (선택 · 입력한 것만 시트에 들어감)';
+  area.appendChild(title);
+  const wrap = document.createElement('div');
+  area.appendChild(wrap);
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'item-add-btn';
+  add.textContent = '+ 디스플레이 소재 추가';
+  add.addEventListener('click', ()=>{ list.push(makeBlankDisplayItem()); draw(); });
+  area.appendChild(add);
+
+  function draw(){
+    wrap.innerHTML = '';
+    list.forEach((d, idx)=>{
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.style.cursor = 'default';
+      card.innerHTML = `<div class="item-card-header"><span>디스플레이 ${idx+1}</span><button type="button" class="item-remove-btn">삭제</button></div>`;
+      KAKAO_DISPLAY_FIELDS.forEach(([label, limit, prop])=>{
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        row.innerHTML = `
+          <div class="field-label">${label}${limit ? ` (${limit}자)` : ''}</div>
+          <input type="text" class="field-input" data-disp="${idx}" value="${escapeHtml(d[prop] || '')}">
+          <div class="field-count">0자${limit ? ` / ${limit}` : ''}</div>`;
+        const inp = row.querySelector('input');
+        const cnt = row.querySelector('.field-count');
+        const upd = ()=>{
+          d[prop] = inp.value;
+          const n = inp.value.length;
+          cnt.textContent = `${n}자${limit ? ` / ${limit}` : ''}`;
+          const over = !!(limit && n > limit);
+          cnt.classList.toggle('over', over);
+          row.classList.toggle('over', over);
+        };
+        inp.addEventListener('input', upd);
+        upd();
+        card.appendChild(row);
+      });
+      card.querySelector('.item-remove-btn').addEventListener('click', ()=>{ list.splice(idx, 1); draw(); });
+      wrap.appendChild(card);
+    });
+  }
+  draw();
 }
 
 function renderRepeatableForm(area, cfg){
   const key = currentChannel;
   const items = channelData[key].items;
-
-  const dashboardBtn = renderDashboardLinkBtn(cfg);
-  if(dashboardBtn) area.appendChild(dashboardBtn);
 
   if(cfg.hasEventName){
     const row = document.createElement('div');
@@ -1840,21 +2207,53 @@ function renderRepeatableForm(area, cfg){
   const exportAllBtn = document.createElement('button');
   exportAllBtn.type = 'button';
   exportAllBtn.className = 'apply-bulk-btn';
-  exportAllBtn.style.marginBottom = '10px';
-  exportAllBtn.style.background = 'var(--mint)';
-  exportAllBtn.textContent = '📄 전체 소재 구글 시트로 내보내기';
+  exportAllBtn.classList.add('dark');
+  exportAllBtn.textContent = '📄 구글 시트 내보내기';
   // gfa_smart/gfa_shopping은 hiddenFromSidebar라 이 화면으로 직접 렌더링될 일이 없음 —
   // 그 둘의 내보내기는 GFA 통합 화면(runGfaCombinedExport)이 전담함
   let repeatableRowGenerator, mergeBuilder;
   if(key === 'bizboard'){
     repeatableRowGenerator = ()=>generateBizboardAppendRows(cfg, items);
     mergeBuilder = buildBizboardMergeRequests;
+  }else if(key === 'daangn'){
+    repeatableRowGenerator = ()=>generateDaangnAppendRows(cfg, items);
+    mergeBuilder = buildDaangnFormatRequests;
   }else{
     repeatableRowGenerator = ()=>generateRepeatableAppendRows(cfg, items);
     mergeBuilder = null;
   }
-  wireGoogleSheetExportBtn(exportAllBtn, repeatableRowGenerator, `${cfg.label} 소재`, mergeBuilder);
-  area.appendChild(exportAllBtn);
+  // 비즈보드는 서식을 buildBizboardMergeRequests가 HEX로 직접 지정하므로 템플릿 서식 복사는 건너뜀
+  wireGoogleSheetExportBtn(exportAllBtn, repeatableRowGenerator, `${cfg.label} 소재`, mergeBuilder,
+    key === 'daangn' ? applyDaangnCountFormulas : null, false,
+    key === 'daangn' ? 2 : 0, key === 'bizboard' || key === 'daangn');
+
+  // 전체 소재 복사 — 소재 카드별 "📋 복사"와 같은 형식(소재명 [tab] 카피 줄바꿈 묶음)을 소재마다 한 줄씩
+  const copyAllBtn = document.createElement('button');
+  copyAllBtn.type = 'button';
+  copyAllBtn.className = 'apply-bulk-btn';
+  copyAllBtn.textContent = '📋 전체 소재 복사';
+  copyAllBtn.addEventListener('click', async ()=>{
+    const text = items.map(item=>{
+      const 소재명 = getFieldValueByLabel(cfg, item, 0, '소재명');
+      const copyBlock = cfg.groups[1].fields.map((f, fi)=> item[`g1_f${fi}`] || '').join('\n');
+      return [tsvCell(소재명), tsvCell(copyBlock)].join('\t');
+    }).join('\n');
+    const orig = copyAllBtn.textContent;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copyAllBtn.textContent = '✓ 복사됨';
+    setTimeout(()=>{ copyAllBtn.textContent = orig; }, 1200);
+  });
+  const dashboardBtn = renderDashboardLinkBtn(cfg);
+  appendBtnRow(area, ...[copyAllBtn, exportAllBtn, dashboardBtn].filter(Boolean));
 
   const itemsWrap = document.createElement('div');
   itemsWrap.id = 'itemsWrap';
@@ -1863,6 +2262,7 @@ function renderRepeatableForm(area, cfg){
   const addBtn = document.createElement('button');
   addBtn.type = 'button';
   addBtn.className = 'item-add-btn';
+  addBtn.dataset.chan = key;
   addBtn.textContent = '+ 소재 추가';
   addBtn.addEventListener('click', ()=>{
     items.push(makeBlankItem(key));
@@ -1870,6 +2270,8 @@ function renderRepeatableForm(area, cfg){
     renderItemsList();
   });
   area.appendChild(addBtn);
+
+  if(key === 'bizboard') renderKakaoDisplaySection(area);
 
   function renderItemsList(){
     itemsWrap.innerHTML = '';
@@ -2069,6 +2471,19 @@ function collectGroupValues(area, gi, fields){
   });
 }
 
+/* 브랜드검색 시트 내보내기 전 — 표 맨 위 제목 셀(노란 칸)에 들어갈 행사명이 비어 있으면 바로 물어봄.
+   비운 채로 내보내면 제목 없는 표가 쌓이는 문제가 있었음(2026-11-23) */
+function ensureBrandEventName(cfg){
+  const area = document.getElementById('formArea');
+  const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
+  const inp = metaIdx>=0 ? area.querySelector(`.field-input[data-group="${metaIdx}"][data-idx="0"]`) : null;
+  if(!inp || inp.value.trim()) return;
+  const v = (window.prompt('시트 표 제목으로 들어갈 행사명을 입력해줘', '') || '').trim();
+  if(!v) throw new Error('행사명(표 제목)이 비어 있어서 내보내지 않았어. 행사명을 입력하고 다시 눌러줘.');
+  inp.value = v;
+  inp.dispatchEvent(new Event('input', { bubbles:true }));
+}
+
 function generateBrandSearchRows(cfg){
   const area = document.getElementById('formArea');
   const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
@@ -2099,8 +2514,16 @@ function generateBrandSearchRows(cfg){
   return rows;
 }
 
+/* 복사 텍스트의 글자수 칸도 숫자가 아니라 수식 — 붙여넣는 위치를 모르므로 "바로 왼쪽 칸" 상대참조 */
+const LEN_LEFT_FORMULA = '=LEN(INDIRECT("RC[-1]",FALSE))';
 function generateBrandSearchCopyText(cfg){
-  return generateBrandSearchRows(cfg).map(r=>r.join('\t')).join('\n');
+  return generateBrandSearchRows(cfg).map((r, i)=>{
+    if(i < 2) return r.join('\t');
+    const row = r.slice();
+    if(row[0] !== '') row[2] = LEN_LEFT_FORMULA;
+    if(row.length > 4 && row[4] !== '') row[6] = LEN_LEFT_FORMULA;
+    return row.join('\t');
+  }).join('\n');
 }
 
 /* 한 줄, 탭 구분 형식 복사 (GFA 쇼핑소식: 소재명 [tab] 광고문구) */
@@ -2140,9 +2563,13 @@ function generateBandCopyLine(cfg){
 }
 
 /* 구글 디맨드젠 기획표 형식 복사 (붙여넣기 파서와 정확히 대응되는 라운드트립 포맷) */
+/* 구글 디맨드젠 시트 표(2026-11-23 사용자 지정) — 열: B 항목명 / C:D(병합) 입력 문구 / E 글자 수·바이트 수
+   [제목] → [이미지 - 단컷] → [텍스트 | * 안내 문구] → 광고 제목 5행 → 설명 5행 → 업체명 → 최종도착URL
+   입력이 비어도 행은 그대로 두고 제한 표시(" / 90 byte")는 남김. rows._layout에 각 구간 위치를 담음 */
 function generateGdemandRows(cfg){
   const area = document.getElementById('formArea');
   const rows = [];
+  const layout = { groups: [] };
 
   const metaIdx = cfg.groups.findIndex(g=>g.name === '소재 정보');
   const metaVals = metaIdx>=0 ? collectGroupValues(area, metaIdx, cfg.groups[metaIdx].fields) : [];
@@ -2153,22 +2580,89 @@ function generateGdemandRows(cfg){
   cfg.groups.forEach((group, gi)=>{
     if(group.name === '소재 정보') return;
     const vals = collectGroupValues(area, gi, group.fields);
+    const start = rows.length;
     vals.forEach((v, i)=>{
       const prefix = i === 0 ? group.name : '';
       if(v.limit != null){
         const count = cfg.unit === 'byte' ? byteLen(v.value) : v.value.length;
-        rows.push([prefix, v.value, '', `${count} / ${v.limit} byte`]);
+        rows.push([prefix, v.value, '', v.value ? `${count} / ${v.limit} byte` : ` / ${v.limit} byte`]);
+        layout.limits = layout.limits || {};
+        layout.limits[rows.length - 1] = v.limit;
       }else{
-        rows.push([prefix, v.value]);
+        rows.push([prefix, v.value, '', '']);
       }
     });
+    layout.groups.push({ start, end: rows.length });
   });
 
+  rows._layout = layout;
   return rows;
 }
 
+/* 구글 디맨드젠 서식 — 지정 HEX 그대로(테마색 대체 금지) */
+function buildGdemandFormatRequests(sheetId, insertRow0, rows){
+  const L = rows._layout;
+  const hex = h => ({ red: parseInt(h.slice(1,3),16)/255, green: parseInt(h.slice(3,5),16)/255, blue: parseInt(h.slice(5,7),16)/255 });
+  const WHITE = hex('#FFFFFF'), BLACK = hex('#000000'), RED = hex('#FF0000'), PEACH = hex('#FCE5CD'),
+        DGRAY = hex('#595959'), BLUE = hex('#4472C4'), LBLUE = hex('#D9E2F3'), LGRAY = hex('#D9D9D9');
+  const BORDER = { style:'SOLID', width:1, color: BLACK };
+  const NONE = { style:'NONE' };
+  const B = 1, C = 2, E = 4, END = 5; // B~E
+  const R = i => insertRow0 + i;
+  const range = (r0, r1, c0, c1) => ({ sheetId, startRowIndex:r0, endRowIndex:r1, startColumnIndex:c0, endColumnIndex:c1 });
+  const FIELDS = 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)';
+  const fmt = (r0, r1, c0, c1, bg, fg, bold, h, v, wrap) => ({ repeatCell:{ range: range(r0, r1, c0, c1),
+    cell:{ userEnteredFormat:{ backgroundColor:bg, textFormat:{ foregroundColor:fg, bold:!!bold }, horizontalAlignment:h, verticalAlignment:v || 'MIDDLE', wrapStrategy: wrap || 'OVERFLOW_CELL' } },
+    fields: FIELDS } });
+  const merge = (r0, r1, c0, c1) => ({ mergeCells:{ range: range(r0, r1, c0, c1), mergeType:'MERGE_ALL' } });
+  const tableStart = L.groups[0].start, tableEnd = rows.length;
+  const req = [];
+  // 0) 삽입 영역 초기화 — 위아래 서식 상속 방지
+  req.push(fmt(R(0), R(rows.length) + SHEET_GAP_ROWS, B, END, WHITE, BLACK, false, 'LEFT'));
+  req.push({ updateBorders:{ range: range(R(0), R(rows.length) + SHEET_GAP_ROWS, B, END), top:NONE, bottom:NONE, left:NONE, right:NONE, innerHorizontal:NONE, innerVertical:NONE } });
+  // 1) 제목
+  req.push(fmt(R(0), R(1), B, B + 1, PEACH, BLACK, true, 'LEFT'));
+  // 2) 이미지 - 단컷 (B~E 병합, 진회색)
+  req.push(merge(R(1), R(2), B, END));
+  req.push(fmt(R(1), R(2), B, END, DGRAY, WHITE, true, 'CENTER'));
+  // 3) 텍스트 (B 파랑) + 안내 문구(C~E 병합, 흰 배경 빨간 글씨)
+  req.push(fmt(R(2), R(3), B, B + 1, BLUE, WHITE, true, 'CENTER'));
+  req.push(merge(R(2), R(3), C, END));
+  req.push(fmt(R(2), R(3), C, END, WHITE, RED, false, 'LEFT'));
+  // 4) 표 본문: 항목명(연파랑·굵게·가운데) / 입력 문구(C:D 병합, 흰색·왼쪽) / 글자 수(연회색·가운데)
+  req.push(fmt(R(tableStart), R(tableEnd), B, B + 1, LBLUE, BLACK, true, 'CENTER', 'MIDDLE', 'WRAP'));
+  req.push(fmt(R(tableStart), R(tableEnd), C, E, WHITE, BLACK, false, 'LEFT', 'MIDDLE', 'WRAP'));
+  req.push(fmt(R(tableStart), R(tableEnd), E, END, LGRAY, BLACK, false, 'CENTER'));
+  L.groups.forEach(g => { if(g.end - g.start > 1) req.push(merge(R(g.start), R(g.end), B, B + 1)); });
+  for(let i = tableStart; i < tableEnd; i++) req.push(merge(R(i), R(i + 1), C, E));
+  // 5) 테두리 — 제목·구분 행 제외, 표 본문만
+  req.push({ updateBorders:{ range: range(R(tableStart), R(tableEnd), B, END), top:BORDER, bottom:BORDER, left:BORDER, right:BORDER, innerHorizontal:BORDER, innerVertical:BORDER } });
+  return req;
+}
+
+/* 구글 디맨드젠 바이트 칸 수식 — 시트와 같은 LENB(한글 2byte). ref는 값 칸 참조 */
+const gdemandCountFormula = (ref, limit) => `=IF(${ref}="","",LENB(${ref}))&" / ${limit} byte"`;
+function applyGdemandCountFormulas(rows, insertRow0){
+  const limits = (rows._layout && rows._layout.limits) || {};
+  const out = rows.map((row, i)=>{
+    if(limits[i] == null) return row;
+    const r = row.slice();
+    r[3] = gdemandCountFormula(`C${insertRow0 + i + 1}`, limits[i]);
+    return r;
+  });
+  out._layout = rows._layout;
+  return out;
+}
 function generateGdemandCopyText(cfg){
-  return generateGdemandRows(cfg).map(r=>r.join('\t')).join('\n');
+  const rows = generateGdemandRows(cfg);
+  const limits = rows._layout.limits || {};
+  // 붙여넣으면 값(C)과 바이트 칸(E) 사이에 빈 칸(D) 하나 — 바이트 칸 기준 두 칸 왼쪽 참조
+  return rows.map((r, i)=>{
+    if(limits[i] == null) return r.join('\t');
+    const row = r.slice();
+    row[3] = gdemandCountFormula('INDIRECT("RC[-2]",FALSE)', limits[i]);
+    return row.join('\t');
+  }).join('\n');
 }
 
 /* ---------------- 밴드 소셜광고 문구 자동 검사 ----------------
@@ -2201,6 +2695,36 @@ const BAND_LANDING_CHECKLIST = [
   '판매/공동구매 게시글에 운영정책 필수 문구 2종 기재했는지 — ① "밴드(네이버 주식회사)는 밴드 내에서 발생하는 상업활동 등에 관련이 없습니다" ② "주문 시 수집하는 개인정보는 밴드에서 관여하지 않고 배송 목적으로만 사용하며 배송 후 삭제합니다"',
   '타사 브랜드명을 소재/게시글에 노출한다면 브랜드와 협의된 증빙을 준비했는지'
 ];
+
+/* 당근 피드 광고 문구 검사 — 당근 비즈스쿨 "전문가모드 광고 제작 및 심사 가이드" 기준 중 기계적으로
+   확정 가능한 것만(전화번호, 과장 표현, 특수문자/단어 반복, 한글·영어 외 문자). 맥락 판단은 SYSTEM_PROMPT */
+function checkDaangnCopyIssues(label, val, prefix){
+  const issues = [];
+  if(!val) return issues;
+  const at = `${prefix || ''}"${label}"`;
+  const push = (severity, category, reason, suggestion)=>issues.push({severity, category:`당근/${category}`, reason:`${at}: ${reason}`, suggestion});
+  if(/(0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4})|(1[5-9]\d{2}[-.\s]?\d{4})/.test(val)){
+    push('high','전화번호', '전화번호로 보이는 숫자가 포함됨. 당근 광고 제목에는 전화번호 입력 불가.', '전화번호를 빼고 랜딩페이지에서 안내.');
+  }
+  const sup = val.match(/1위|1등|최고|유일|최대|최초|최저가|넘버원|No\.?\s?1/gi);
+  if(sup){
+    push('high','과장 표현', `과장성 표현(${[...new Set(sup)].join(', ')})이 포함됨. 당근 가이드상 삭제하거나 표현을 증빙하는 서류를 첨부해야 함.`, '표현을 빼거나, 증빙 서류(출처/조사기관/기간)를 심사 시 함께 제출.');
+  }
+  const runs = val.match(/([!?~.,·★☆♡♥▶◀※^])\1+/g);
+  if(runs){
+    push('medium','특수문자 반복', `특수문자를 불필요하게 반복한 부분이 있음(${[...new Set(runs)].join(' ')}). 당근은 특수문자·이모티콘을 의미 전달에 필요한 경우만 허용.`, '반복 기호를 1개로 줄이거나 삭제.');
+  }
+  const words = val.split(/\s+/).filter(w=>w.length>=2);
+  const dup = words.filter((w, i)=>words.indexOf(w) !== i);
+  if(dup.length){
+    push('medium','단어 반복', `같은 단어가 반복됨(${[...new Set(dup)].join(', ')}). 이름·단어의 불필요한 반복은 승인 불가.`, '반복되는 단어를 한 번만 쓰도록 문구 정리.');
+  }
+  const foreign = val.match(/[぀-ヿ一-鿿Ѐ-ӿ]/g);
+  if(foreign){
+    push('high','외국어 문자', `한글/영어가 아닌 문자(${[...new Set(foreign)].join('')})가 포함됨. 당근 광고는 한글 또는 영어만 기재 가능.`, '한글 또는 영어로 바꾸기.');
+  }
+  return issues;
+}
 
 function checkBandCopyIssues(label, val, prefix){
   const issues = [];
@@ -2314,6 +2838,7 @@ function collectFieldsSummary(){
           }
           lines.push(`${label}: ${val || '(공란)'} (${count}${unit==='byte'?'B':'자'}${limit!=null ? '/'+limit : ''})${pxNote}`);
           if(cfg.bandPolicy && label !== '소재명') overLimitIssues.push(...checkBandCopyIssues(label, val, `소재 ${itemIdx+1} `));
+          if(cfg.daangnPolicy && label !== '소재명') overLimitIssues.push(...checkDaangnCopyIssues(label, val, `소재 ${itemIdx+1} `));
           if(limit != null && count > limit){
             overLimitIssues.push({
               severity:'high', category:'글자수 초과',
@@ -2357,6 +2882,7 @@ function collectFieldsSummary(){
       }
       lines.push(`${label}: ${val || '(공란)'} (${count}${unit==='byte'?'B':'자'}${limit!=null ? '/'+limit : ''})${pxNote}`);
       if(cfg.bandPolicy && label !== '소재명') overLimitIssues.push(...checkBandCopyIssues(label, val, ''));
+      if(cfg.daangnPolicy && label !== '소재명') overLimitIssues.push(...checkDaangnCopyIssues(label, val, ''));
       if(limit != null && count > limit){
         overLimitIssues.push({
           severity:'high', category:'글자수 초과',
@@ -2484,15 +3010,44 @@ document.getElementById('formArea').addEventListener('paste', (e)=>{
   const lines = text.split(/\r\n|\r|\n/);
   // 마지막이 빈 줄이면 제거 (엑셀에서 복사할 때 흔히 붙는 후행 개행)
   while(lines.length > 1 && lines[lines.length-1] === '') lines.pop();
-  if(lines.length <= 1) return; // 한 줄짜리는 기본 붙여넣기 동작 그대로
+  const hasTab = text.includes('\t');
+  if(lines.length <= 1 && !hasTab) return; // 탭 없는 한 줄짜리는 기본 붙여넣기 동작 그대로
 
   e.preventDefault();
+
+  // 카카오 비즈보드: 엑셀/시트에서 복사한 "소재명 [tab] 메인카피 [tab] 서브카피" 줄을 붙여넣으면
+  // 붙여넣은 소재 카드부터 순서대로 채우고, 줄이 여러 개면 소재 카드를 자동으로 늘려서 한 줄 = 소재 1개로 넣음
+  if(CHANNELS[currentChannel].repeatable && hasTab && target.dataset.disp == null){
+    const pasteRows = lines.map(l=>l.split('\t').map(v=>v.trim()));
+    const startItem = target.dataset.item != null ? parseInt(target.dataset.item) : 0;
+    const items = channelData[currentChannel].items;
+    const addBtn = document.querySelector('#formArea .item-add-btn');
+    while(addBtn && items.length < startItem + pasteRows.length) addBtn.click();
+    // 채널 필드 순서 그대로(비즈보드: 소재명/메인카피/서브카피, 당근: 소재명/광고 제목)
+    const slots = CHANNELS[currentChannel].groups.flatMap((g, gi)=> g.fields.map((f, fi)=> [gi, fi]));
+    const filled = [];
+    pasteRows.forEach((cols, r)=>{
+      slots.forEach(([g, f], c)=>{
+        if(cols[c] == null) return;
+        const inp = document.querySelector(`#formArea .field-input[data-item="${startItem + r}"][data-group="${g}"][data-idx="${f}"]`);
+        if(!inp) return;
+        inp.value = cols[c];
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        const row = inp.closest('.field-row');
+        row.classList.add('bulk-filled');
+        filled.push(row);
+      });
+    });
+    setTimeout(()=>filled.forEach(r=>r.classList.remove('bulk-filled')), 500);
+    return;
+  }
   const allInputs = Array.from(document.querySelectorAll('#formArea .field-input'));
   const startIdx = allInputs.indexOf(target);
   if(startIdx === -1) return;
 
   const values = (currentChannel === 'gdemand' && text.includes('\t'))
     ? parseGdemandBulkPaste(lines)
+    : hasTab ? lines.flatMap(l=>l.split('\t').map(v=>v.trim()))
     : lines.map(l=>l.trim());
 
   const filledRows = [];
@@ -2545,6 +3100,14 @@ function checkImageSpec(img, cfg){
     const match = spec.sizes.some(([w,h])=>w===img.width && h===img.height);
     if(!match){
       problems.push(`업로드 이미지 실제 크기는 ${img.width}×${img.height}px인데, ${cfg.label} 규격은 ${spec.sizes.map(s=>s.join('×')+'px').join(' 또는 ')}이야. 규격이 안 맞으면 등록 자체가 안 됨.`);
+    }
+  }
+  if(spec.squareMin){
+    if(img.width !== img.height){
+      problems.push(`업로드 이미지 실제 크기는 ${img.width}×${img.height}px인데, ${cfg.label} 규격은 1:1 정사각형이야. 비율이 다르면 잘려서 노출될 수 있음.`);
+    }
+    if(Math.min(img.width, img.height) < spec.squareMin){
+      problems.push(`이미지 크기 ${img.width}×${img.height}px로 최소 기준(${spec.squareMin}×${spec.squareMin}px) 미달.`);
     }
   }
   if(img.kb != null){
@@ -2617,6 +3180,17 @@ const SYSTEM_PROMPT = `
 - 금지 업종(담배/주류, 도박·사행성, 다단계, 의약품·의료기기·건강기능식품, 부인과·비뇨기과, 종교·정치, 이미테이션, 금융·부동산·투자자문·대출)에 해당해 보이는 소재면 "업종 확인 필요"로 지적
 - 의료/보험/법률 업종 소재는 사전심의필 번호·증빙 제출이 필요하다는 점을 지적
 - 상업적 판매/공동구매 목적 소재로 보이면(제품 판매, 할인, 가격 언급 등) "랜딩 게시글에 판매자 정보(상호/대표자/주소/연락처/사업자등록번호/통신판매신고번호)와 운영정책 필수 문구 2종이 기재되어 있는지, 통신판매업 신고가 필요한 구조는 아닌지" 반드시 확인하라고 summary에 짧게 언급 — 실제 반려 사례의 절대다수가 이 사유였음. 단 코드가 이미 소재 하단에 체크리스트 박스를 보여주고 있으니 issues 항목으로 중복 생성하지는 말고 summary에 한 줄만
+
+[당근 피드 광고]
+- 근거: 당근 비즈스쿨 "전문가모드 광고 제작 및 심사 가이드". 전화번호, 과장 표현(1위/최고/유일/최대/최초), 특수문자·단어 반복, 한글/영어 외 문자는 이미 코드가 검사해서 issues에 넣으니 너는 중복으로 만들지 마. 이미지 비율(1:1)/크기/용량도 코드가 측정하니 언급하지 마
+- 네가 판단할 것:
+  · 이미지 내 텍스트가 지나치게 크거나 이미지의 50% 이상을 차지하면 반려 / 텍스트가 너무 작거나 가독성이 떨어져도 반려
+  · 저해상도, 부자연스러운 합성, 비율에 안 맞게 눌린 이미지, 과도한 흐림·블러·모자이크·왜곡, 식별이 어려운 작은 이미지 → 반려
+  · 광고 업종과 무관한 이미지 → 반려 / 효과를 강조하는 전후 비교 이미지 → 집행 제한 가능(주의)
+  · 광고 제목의 맞춤법이 심하게 틀리거나 일부러 틀린 경우 반려
+  · 금융/의료/영화/주류/건강기능식품 등 심의필·심사 서류 대상 업종으로 보이면 "심의필/심사 서류 확인 필요"로 지적 (당근 심사 반려 사유 1위)
+  · 쇼핑/판매 소재면 summary에 "랜딩페이지에서 가격 확인 가능 여부, 푸터의 통신판매업 신고번호" 확인을 한 줄 언급
+  · 광고 불가 업종(성인 방송, 전자담배, 가상화폐 등)으로 보이면 지적
 
 [구글 디맨드젠]
 - 광고 제목/설명에 느낌표, 기호, 구두점 사용 시 반려
@@ -2830,7 +3404,7 @@ function tsvCell(value){
 
 document.getElementById('settingsBtn').addEventListener('click', ()=>{
   document.getElementById('apiKeyInput').value = localStorage.getItem('gemini_api_key') || '';
-  document.getElementById('googleClientIdInput').value = localStorage.getItem('google_client_id') || '';
+  document.getElementById('googleClientIdInput').value = (localStorage.getItem('google_client_id') || DEFAULT_GOOGLE_CLIENT_ID) || '';
   document.getElementById('sheetIdInput').value = localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID;
   Object.keys(SHEET_GID_FIELD_MAP).forEach(fieldKey=>{
     const stored = localStorage.getItem(`sheet_gid_${fieldKey}`);
@@ -2868,6 +3442,213 @@ document.getElementById('saveApiKeyBtn').addEventListener('click', ()=>{
 
   status.textContent = '✓ 저장됨';
 });
+/* ================= 행사 스킴 → T&D 추천 (2026-11-23) =================
+   - 스킴은 행사당 1번만 입력(localStorage 'tnd_scheme'), 한 번 추천받으면 모든 매체에 같이 적용됨
+   - 이전 T&D는 구글 시트의 매체별 탭(DEFAULT_SHEET_GIDS)에서 맨 위(최신) 행들을 읽어 Gemini에 예시로 넘김
+   - 추천 문구는 입력칸의 placeholder(회색 글씨)로만 표시 → 참고용. 실제 값은 사용자가 입력하거나
+     "추천 문구 그대로 쓰기"를 눌러야 들어감(빈 칸만 채움, 이미 입력한 칸은 안 건드림) */
+const TND_TARGETS = ['brand_video','brand_image','meta','bizboard','gfa_feed','gfa_smart','gfa_shopping','gdemand','daangn','band_news','band_home','band_list'];
+const TND_SKIP_LABELS = ['행사명', '배경색(RGB)', '폴더 경로', '최종도착URL'];
+const TND_ITEM_COUNT = 3;
+let tndSuggestions = null;
+try{ tndSuggestions = JSON.parse(localStorage.getItem('tnd_suggestions') || 'null'); }catch(e){ tndSuggestions = null; }
+
+function tndFieldSpecs(key){
+  const cfg = CHANNELS[key];
+  if(key === 'gfa_feed') return [{ key:'adCopy', label:'광고문구', limit:65 }];
+  const specs = [];
+  cfg.groups.forEach((g, gi)=> g.fields.forEach((f, fi)=>{
+    if(TND_SKIP_LABELS.includes(f[0])) return;
+    const grp = (g.name === 'PC' || g.name === 'MO') ? `${g.name} ` : '';
+    specs.push({ key:`g${gi}_f${fi}`, label: grp + f[0], limit: f[1] });
+  }));
+  return specs;
+}
+
+function tndChannelSpecText(){
+  return TND_TARGETS.map(key=>{
+    const cfg = CHANNELS[key];
+    const unit = cfg.unit === 'byte' ? 'byte(한글 2byte)' : '자';
+    const mode = cfg.repeatable ? `items(소재 ${TND_ITEM_COUNT}개)` : 'fields';
+    const fields = tndFieldSpecs(key).map(s=> `${s.key}=${s.label}${s.limit!=null ? `(최대 ${s.limit}${unit})` : ''}`).join(', ');
+    return `- ${key} [${cfg.label}] ${mode}: ${fields}`;
+  }).join('\n');
+}
+
+async function readPastTndFromSheet(){
+  const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
+  const token = await getGoogleAccessToken();
+  const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, { headers:{'Authorization':'Bearer ' + token} });
+  if(!metaRes.ok) throw new Error('스프레드시트 정보 조회 실패: ' + (await metaRes.text()));
+  const props = ((await metaRes.json()).sheets || []).map(s=>s.properties);
+  const tabs = [];
+  Object.keys(SHEET_GID_FIELD_MAP).forEach(fieldKey=>{
+    const gid = (localStorage.getItem(`sheet_gid_${fieldKey}`) ?? DEFAULT_SHEET_GIDS[fieldKey] ?? '').trim();
+    const p = gid && props.find(x=> String(x.sheetId) === gid);
+    if(p) tabs.push({ fieldKey, title: p.title });
+  });
+  if(!tabs.length) return '';
+  const qs = tabs.map(t=> 'ranges=' + encodeURIComponent(`'${t.title}'!B1:H260`)).join('&');
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${qs}`, { headers:{'Authorization':'Bearer ' + token} });
+  if(!res.ok) throw new Error('이전 T&D 읽기 실패: ' + (await res.text()));
+  const json = await res.json();
+  return (json.valueRanges || []).map((vr, i)=>{
+    const lines = (vr.values || []).map(r=> r.map(c=> String(c).trim()).filter(Boolean).join(' | ')).filter(Boolean);
+    let text = lines.join('\n');
+    if(text.length > 4500) text = text.slice(0, 4500) + '\n...(이하 생략)';
+    return `### 탭 "${tabs[i].title}" (매체 묶음: ${tabs[i].fieldKey}) — 위쪽이 최신\n${text}`;
+  }).join('\n\n');
+}
+
+const TND_SYSTEM_PROMPT = `
+너는 한국 온라인 광고 T&D(타이틀·디스크립션) 카피라이터야. 사용자가 준 "행사 스킴"과 팀이 실제로 써온 "이전 T&D"를 보고, 매체별 입력칸에 넣을 추천 문구를 만들어.
+- 이전 T&D의 말투·구조·길이·소재명 규칙(예: price-, urgency-, benefit-, celebrity-, usp- 같은 접두어 + 번호)을 최대한 따라 해. 스킴에 없는 혜택·가격·날짜·수치를 지어내지 마.
+- 글자수/byte 제한은 반드시 지켜(구글 디맨드젠은 한글 2byte로 계산). 제한이 없는 칸도 이전 T&D 길이 수준으로.
+- 매체별 금지: 브랜드검색 새소식에 괄호/대괄호 금지, "최저가/네이버/최대 할인가/한 뼘" 금지 · 구글 디맨드젠 제목/설명에 느낌표·기호·구두점, 영어 대문자 연속 금지 · 밴드는 이모지·가격·전화번호·최상급(최고/1위/유일) 금지 · 당근은 전화번호·과장(1위/최고/유일/최대/최초) 금지 · 카카오 비즈보드 메인카피와 서브카피는 서로 다른 문구 · "평" 단위 금지(GFA).
+- 소재가 여러 개인 매체(items)는 서로 다른 소구점(가격/긴급성/혜택/셀럽/USP 등)으로 나눠.
+반드시 아래 JSON 형식으로만 응답해:
+{"eventName":"행사명(이전 T&D의 행사명 형식을 따름, 예: 261124_제품명_채널_내용)","channels":{"<채널키>":{"fields":{"<필드키>":"문구"}} 또는 {"items":[{"<필드키>":"문구"}]}}}
+`;
+
+async function generateTndSuggestions(scheme, pastText){
+  const apiKey = window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || '';
+  if(!apiKey) throw new Error('Gemini API 키가 없어. ⚙ 설정에서 먼저 입력해줘.');
+  const userText = `## 행사 스킴\n${scheme}\n\n## 매체별 입력칸 (키=이름(제한))\n${tndChannelSpecText()}\n\n## 이전 T&D (구글 시트)\n${pastText || '(읽어온 데이터 없음)'}`;
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      system_instruction:{ parts:[{ text: TND_SYSTEM_PROMPT }] },
+      contents:[{ role:'user', parts:[{ text: userText }] }],
+      generationConfig:{ maxOutputTokens: 16384, responseMimeType:'application/json' }
+    })
+  });
+  if(!res.ok) throw new Error(`API 오류 (${res.status}): ${await res.text()}`);
+  const data = await res.json();
+  if(data.candidates?.[0]?.finishReason === 'MAX_TOKENS') throw new Error('응답이 길어서 잘렸어. 다시 시도해줘.');
+  const text = (data.candidates?.[0]?.content?.parts || []).map(p=>p.text || '').join('').trim()
+    .replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  const parsed = JSON.parse(text);
+  if(!parsed || typeof parsed !== 'object' || !parsed.channels) throw new Error('추천 결과 형식이 이상해. 다시 시도해줘.');
+  return parsed;
+}
+
+/* 입력칸 하나 → 추천 문구 */
+function tndSuggestionFor(inp){
+  if(!tndSuggestions) return '';
+  const ev = tndSuggestions.eventName || '';
+  if(inp.id === 'eventNameInput' || inp.id === 'gfaCombinedEventNameInput' || inp.dataset.label === '행사명') return ev;
+  if(inp.id === 'gfaFeedAdCopyInput') return tndSuggestions.channels?.gfa_feed?.fields?.adCopy || '';
+  if(inp.dataset.disp != null || inp.dataset.group == null) return '';
+  const chan = inp.dataset.chan || currentChannel;
+  const c = tndSuggestions.channels?.[chan];
+  if(!c) return '';
+  const k = `g${inp.dataset.group}_f${inp.dataset.idx}`;
+  if(inp.dataset.item != null) return (c.items?.[parseInt(inp.dataset.item)] || {})[k] || '';
+  return c.fields?.[k] || '';
+}
+
+function tndChannelsOnScreen(){
+  return CHANNELS[currentChannel].isGfaCombined ? ['gfa_feed','gfa_smart','gfa_shopping'] : [currentChannel];
+}
+
+let tndApplying = false;
+function applyTndPlaceholders(){
+  if(tndApplying) return;
+  tndApplying = true;
+  try{
+    const area = document.getElementById('formArea');
+    area.querySelectorAll('.field-input').forEach(inp=>{
+      const sug = tndSuggestionFor(inp);
+      if(sug){ inp.placeholder = sug; inp.dataset.tnd = '1'; }
+      else if(inp.dataset.tnd){ inp.placeholder = ''; delete inp.dataset.tnd; }
+    });
+    const has = !!tndSuggestions && tndChannelsOnScreen().some(k=> tndSuggestions.channels?.[k]);
+    let bar = area.querySelector('.tnd-bar');
+    if(has && !bar){
+      bar = document.createElement('div');
+      bar.className = 'tnd-bar';
+      bar.innerHTML = `<span>✨ 스킴 기반 T&D 추천 문구가 <b>회색 글씨</b>로 들어가 있어 (참고용)</span><button type="button" class="tnd-use-btn">추천 문구 그대로 쓰기</button>`;
+      bar.querySelector('.tnd-use-btn').addEventListener('click', useTndSuggestions);
+      const row = area.querySelector('.btn-row');
+      if(row) row.after(bar); else area.prepend(bar);
+    }else if(!has && bar){
+      bar.remove();
+    }
+  }finally{
+    tndApplying = false;
+  }
+}
+
+/* 빈 칸만 추천 문구로 채움. 소재 여러 개 매체는 추천 개수만큼 소재 카드를 먼저 늘림 */
+function useTndSuggestions(){
+  if(!tndSuggestions) return;
+  tndChannelsOnScreen().forEach(chan=>{
+    const n = tndSuggestions.channels?.[chan]?.items?.length || 0;
+    const items = channelData[chan] && channelData[chan].items;
+    const addBtn = document.querySelector(`#formArea .item-add-btn[data-chan="${chan}"]`);
+    let guard = 0;
+    while(items && addBtn && items.length < n && guard++ < 20) addBtn.click();
+  });
+  applyTndPlaceholders();
+  const filled = [];
+  document.querySelectorAll('#formArea .field-input[data-tnd="1"]').forEach(inp=>{
+    if(inp.value.trim()) return;
+    inp.value = inp.placeholder;
+    inp.dispatchEvent(new Event('input', { bubbles:true }));
+    const row = inp.closest('.field-row');
+    if(row){ row.classList.add('bulk-filled'); filled.push(row); }
+  });
+  setTimeout(()=>filled.forEach(r=>r.classList.remove('bulk-filled')), 600);
+}
+
+new MutationObserver(()=>{ if(!tndApplying) applyTndPlaceholders(); })
+  .observe(document.getElementById('formArea'), { childList:true, subtree:true });
+
+/* ---- 스킴 모달 ---- */
+(function initSchemeModal(){
+  const modal = document.getElementById('schemeModal');
+  const ta = document.getElementById('schemeInput');
+  const status = document.getElementById('schemeStatus');
+  const runBtn = document.getElementById('schemeRunBtn');
+  const clearBtn = document.getElementById('schemeClearBtn');
+  const setStatus = (t, err)=>{ status.textContent = t; status.style.color = err ? 'var(--red)' : 'var(--text-soft)'; };
+  document.getElementById('schemeBtn').addEventListener('click', ()=>{
+    ta.value = localStorage.getItem('tnd_scheme') || '';
+    setStatus(tndSuggestions ? `현재 적용 중인 추천: ${tndSuggestions.eventName || '(행사명 없음)'}` : '');
+    modal.style.display = 'flex';
+  });
+  document.getElementById('closeScheme').addEventListener('click', ()=>{ modal.style.display = 'none'; });
+  modal.addEventListener('click', e=>{ if(e.target === modal) modal.style.display = 'none'; });
+  runBtn.addEventListener('click', async ()=>{
+    const scheme = ta.value.trim();
+    if(!scheme){ setStatus('스킴을 입력해줘.', true); return; }
+    localStorage.setItem('tnd_scheme', scheme);
+    runBtn.disabled = true;
+    try{
+      setStatus('구글 시트에서 이전 T&D 읽는 중...');
+      let past = '';
+      try{ past = await readPastTndFromSheet(); }
+      catch(e){ setStatus('이전 T&D를 못 읽어서 스킴만으로 추천할게... (' + (e.message || e) + ')', true); }
+      setStatus('전체 매체 T&D 추천 만드는 중... (10~30초)');
+      tndSuggestions = await generateTndSuggestions(scheme, past);
+      localStorage.setItem('tnd_suggestions', JSON.stringify(tndSuggestions));
+      applyTndPlaceholders();
+      setStatus('✓ 추천 완료 — 모든 매체 입력칸에 회색 글씨로 들어갔어.');
+      setTimeout(()=>{ modal.style.display = 'none'; }, 900);
+    }catch(e){
+      setStatus(e.message || '추천 실패', true);
+    }finally{
+      runBtn.disabled = false;
+    }
+  });
+  clearBtn.addEventListener('click', ()=>{
+    tndSuggestions = null;
+    localStorage.removeItem('tnd_suggestions');
+    applyTndPlaceholders();
+    setStatus('추천 문구를 지웠어. (입력해둔 값은 그대로)');
+  });
+})();
+
 renderForm();
 </script>
 </body></html>
