@@ -599,20 +599,17 @@ function byteLen(str){
    새 행을 이어붙임(append) — 팀이 그동안 복사→붙여넣기 해온 시트 포맷을 그대로 재현.
    gid가 없는 채널은 새 스프레드시트를 만들어서 채우고 염. */
 const DEFAULT_GOOGLE_CLIENT_ID = '267235599647-qh0olcgerlv33uc1q0tt07aq0jdo0gpn.apps.googleusercontent.com';
-const DEFAULT_GOOGLE_SHEET_ID = '1O85baUUaer5vcSOZhxhlZ4IeeAEqDBP6fDab1SmMdiE';
-/* 2026-11-23 시트 이전: 예전 기본 스프레드시트/gid를 설정에서 "저장"했던 브라우저는 localStorage에 옛 값이
+const DEFAULT_GOOGLE_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
+/* 시트 이전 시: 예전 기본 스프레드시트를 설정에서 "저장"했던 브라우저는 localStorage에 옛 값이
    그대로 남아 새 기본값이 안 먹으므로, 옛 기본값과 똑같은 저장값만 한 번 지워서 새 기본값을 따르게 함
-   (사용자가 직접 다른 값으로 바꿔둔 건 건드리지 않음) */
+   (사용자가 직접 다른 값으로 바꿔둔 건 건드리지 않음). gid는 이전 시트와 동일해서 그대로 둠.
+   v3(2026-11-23): 1O85… → 1dTW…(T&D 적재 시트)로 다시 변경 */
 (function migrateSheetSettings(){
   try{
-    if(localStorage.getItem('sheet_settings_v') === '2') return;
-    const OLD_SHEET_ID = '1dTWgLMwhFwitX4h7yXMJiCteO9n9IwqZfoApNLnp2J0';
-    const OLD_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109' };
-    if((localStorage.getItem('google_spreadsheet_id') || '').trim() === OLD_SHEET_ID) localStorage.removeItem('google_spreadsheet_id');
-    Object.entries(OLD_GIDS).forEach(([k, v])=>{
-      if((localStorage.getItem(`sheet_gid_${k}`) || '').trim() === v) localStorage.removeItem(`sheet_gid_${k}`);
-    });
-    localStorage.setItem('sheet_settings_v', '2');
+    if(localStorage.getItem('sheet_settings_v') === '3') return;
+    const OLD_SHEET_IDS = ['1O85baUUaer5vcSOZhxhlZ4IeeAEqDBP6fDab1SmMdiE'];
+    if(OLD_SHEET_IDS.includes((localStorage.getItem('google_spreadsheet_id') || '').trim())) localStorage.removeItem('google_spreadsheet_id');
+    localStorage.setItem('sheet_settings_v', '3');
   }catch(e){}
 })();
 const DEFAULT_SHEET_GIDS = { brand:'203777485', bizboard:'649601576', meta:'199255799', gfa:'1063965219', gdemand:'947127109', daangn:'491027119', band:'' };
@@ -3485,12 +3482,14 @@ function tndChannelSpecText(){
 /* 메인 SKU — 행사·SKU마다 혜택이 달라서, 선택한 SKU의 이전 T&D를 우선 참고하게 함.
    시트 표기가 제각각(MAX/맥스, 띄어쓰기 등)이라 공백 제거 + 소문자로 별칭 매칭 */
 const TND_SKUS = [
-  { name:'더 플렌더 MAX',  alias:['플렌더max','플렌더맥스'] },
-  { name:'더 플렌더 mini', alias:['플렌더mini','플렌더미니'] },
-  { name:'더 플렌더 PRO',  alias:['플렌더pro','플렌더프로'] },
-  { name:'더 시프트',      alias:['시프트','shift'] },
-  { name:'더 에어드라이',  alias:['에어드라이','airdry'] },
-  { name:'더 슬림',        alias:['더슬림','slim'] },
+  { name:'더 플렌더 MAX',    alias:['플렌더max','플렌더맥스'] },
+  { name:'더 플렌더 mini',   alias:['플렌더mini','플렌더미니'] },
+  { name:'미니건조기 PRO+',  alias:['미니건조기','건조기pro'] },
+  { name:'더 슬림',          alias:['더슬림','slim'] },
+  { name:'식기세척기 PRO',   alias:['식기세척기','식세기'] },
+  { name:'더 플렌더 PRO',    alias:['플렌더pro','플렌더프로'] },
+  { name:'더 시프트',        alias:['시프트','shift'] },
+  { name:'더 에어드라이',    alias:['에어드라이','airdry'] },
 ];
 function skuMatches(text, sku){
   const t = String(text).toLowerCase().replace(/\s+/g, '');
