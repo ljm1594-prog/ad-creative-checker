@@ -298,6 +298,11 @@
   .tnd-use-btn:hover{background:var(--primary-dark);}
   .scheme-textarea{width:100%; min-height:200px; resize:vertical; font-family:'Noto Sans KR'; font-size:13px; line-height:1.6; border:1px solid var(--border); background:#F7F6F4; border-radius:14px; padding:12px 14px; color:var(--text);}
   .scheme-textarea:focus{outline:none; border-color:#BDB7B1; background:#fff;}
+  .sku-label{font-size:12px; font-weight:700; color:var(--text); margin:0 0 6px;}
+  .sku-chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+  .sku-chip{font-family:'Noto Sans KR'; font-size:12.5px; padding:7px 12px; border-radius:999px; border:1px solid var(--border); background:#F7F6F4; color:var(--text); cursor:pointer;}
+  .sku-chip:hover{border-color:#BDB7B1;}
+  .sku-chip.on{background:#2A2724; border-color:#2A2724; color:#fff; font-weight:700;}
 
   /* ---------- Responsive ---------- */
   @media (max-width:860px){
@@ -390,6 +395,8 @@
       행사당 한 번만 입력하면 돼. 구글 시트의 이전 T&amp;D(매체별 탭 최신 행)를 읽어서, <b>모든 매체</b> 입력칸에 추천 문구를 <b>회색 글씨</b>로 넣어줘.
       그대로 쓰려면 각 매체 화면의 "추천 문구 그대로 쓰기"를 누르고, 아니면 참고만 하고 직접 입력하면 돼.
     </div>
+    <div class="sku-label">메인 SKU <span style="font-weight:400; color:var(--text-soft);">— 이 제품의 이전 T&amp;D를 우선 참고해 (SKU마다 혜택이 달라서)</span></div>
+    <div class="sku-chips" id="skuChips"></div>
     <textarea id="schemeInput" class="scheme-textarea" placeholder="예) 행사: 더 플렌더 MAX 김영철 KOL 라이브&#10;일정: 11/24(화) 밤 7시, 사전 알림 ~11/23&#10;혜택: 블랙프라이데이 역마진 특가, 라이브 한정 경품&#10;채널: 네이버 쇼핑라이브 ..."></textarea>
     <div id="schemeStatus" style="font-size:12px; color:var(--text-soft); min-height:18px; margin-top:8px;"></div>
     <div class="btn-row" style="margin:10px 0 0;">
@@ -3475,7 +3482,22 @@ function tndChannelSpecText(){
   }).join('\n');
 }
 
-async function readPastTndFromSheet(){
+/* 메인 SKU — 행사·SKU마다 혜택이 달라서, 선택한 SKU의 이전 T&D를 우선 참고하게 함.
+   시트 표기가 제각각(MAX/맥스, 띄어쓰기 등)이라 공백 제거 + 소문자로 별칭 매칭 */
+const TND_SKUS = [
+  { name:'더 플렌더 MAX',  alias:['플렌더max','플렌더맥스'] },
+  { name:'더 플렌더 mini', alias:['플렌더mini','플렌더미니'] },
+  { name:'더 플렌더 PRO',  alias:['플렌더pro','플렌더프로'] },
+  { name:'더 시프트',      alias:['시프트','shift'] },
+  { name:'더 에어드라이',  alias:['에어드라이','airdry'] },
+  { name:'더 슬림',        alias:['더슬림','slim'] },
+];
+function skuMatches(text, sku){
+  const t = String(text).toLowerCase().replace(/\s+/g, '');
+  return sku.alias.some(a=> t.includes(a));
+}
+
+async function readPastTndFromSheet(skuName){
   const spreadsheetId = (localStorage.getItem('google_spreadsheet_id') || DEFAULT_GOOGLE_SHEET_ID).trim();
   const token = await getGoogleAccessToken();
   const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`, { headers:{'Authorization':'Bearer ' + token} });
@@ -3492,11 +3514,30 @@ async function readPastTndFromSheet(){
   const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${qs}`, { headers:{'Authorization':'Bearer ' + token} });
   if(!res.ok) throw new Error('이전 T&D 읽기 실패: ' + (await res.text()));
   const json = await res.json();
+  const sku = TND_SKUS.find(s=> s.name === skuName);
   return (json.valueRanges || []).map((vr, i)=>{
-    const lines = (vr.values || []).map(r=> r.map(c=> String(c).trim()).filter(Boolean).join(' | ')).filter(Boolean);
-    let text = lines.join('\n');
-    if(text.length > 4500) text = text.slice(0, 4500) + '\n...(이하 생략)';
-    return `### 탭 "${tabs[i].title}" (매체 묶음: ${tabs[i].fieldKey}) — 위쪽이 최신\n${text}`;
+    // 빈 줄 기준으로 행사 블록을 나눔(행사명은 세로병합이라 블록 첫 줄에만 있음 → 줄 단위가 아니라 블록 단위로 SKU 판별)
+    const blocks = [];
+    let cur = [];
+    (vr.values || []).forEach(r=>{
+      const line = r.map(c=> String(c).trim()).filter(Boolean).join(' | ');
+      if(line) cur.push(line);
+      else if(cur.length){ blocks.push(cur.join('\n')); cur = []; }
+    });
+    if(cur.length) blocks.push(cur.join('\n'));
+    const head = `### 탭 "${tabs[i].title}" (매체 묶음: ${tabs[i].fieldKey}) — 위쪽이 최신`;
+    if(!sku){
+      let text = blocks.join('\n\n');
+      if(text.length > 4500) text = text.slice(0, 4500) + '\n...(이하 생략)';
+      return `${head}\n${text}`;
+    }
+    const same = blocks.filter(b=> skuMatches(b, sku));
+    const other = blocks.filter(b=> !skuMatches(b, sku));
+    let sameText = same.join('\n\n');
+    if(sameText.length > 4000) sameText = sameText.slice(0, 4000) + '\n...(이하 생략)';
+    let otherText = other.join('\n\n');
+    if(otherText.length > 1500) otherText = otherText.slice(0, 1500) + '\n...(이하 생략)';
+    return `${head}\n#### [메인 SKU ${sku.name}의 이전 T&D — 혜택·구조 우선 참고]\n${sameText || '(이 탭엔 해당 SKU 소재 없음)'}\n\n#### [다른 SKU T&D — 말투·형식만 참고, 혜택은 가져오지 말 것]\n${otherText || '(없음)'}`;
   }).join('\n\n');
 }
 
@@ -3506,14 +3547,15 @@ const TND_SYSTEM_PROMPT = `
 - 글자수/byte 제한은 반드시 지켜(구글 디맨드젠은 한글 2byte로 계산). 제한이 없는 칸도 이전 T&D 길이 수준으로.
 - 매체별 금지: 브랜드검색 새소식에 괄호/대괄호 금지, "최저가/네이버/최대 할인가/한 뼘" 금지 · 구글 디맨드젠 제목/설명에 느낌표·기호·구두점, 영어 대문자 연속 금지 · 밴드는 이모지·가격·전화번호·최상급(최고/1위/유일) 금지 · 당근은 전화번호·과장(1위/최고/유일/최대/최초) 금지 · 카카오 비즈보드 메인카피와 서브카피는 서로 다른 문구 · "평" 단위 금지(GFA).
 - 소재가 여러 개인 매체(items)는 서로 다른 소구점(가격/긴급성/혜택/셀럽/USP 등)으로 나눠.
+- "메인 SKU"가 주어지면 그 제품 기준으로 써. 이전 T&D 중 같은 SKU 블록을 1순위로 참고하고, 다른 SKU 블록의 혜택·가격·USP·제품명은 절대 섞지 마(SKU마다 혜택이 다름 — 말투·형식만 참고).
 반드시 아래 JSON 형식으로만 응답해:
 {"eventName":"행사명(이전 T&D의 행사명 형식을 따름, 예: 261124_제품명_채널_내용)","channels":{"<채널키>":{"fields":{"<필드키>":"문구"}} 또는 {"items":[{"<필드키>":"문구"}]}}}
 `;
 
-async function generateTndSuggestions(scheme, pastText){
+async function generateTndSuggestions(scheme, pastText, skuName){
   const apiKey = window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || '';
   if(!apiKey) throw new Error('Gemini API 키가 없어. ⚙ 설정에서 먼저 입력해줘.');
-  const userText = `## 행사 스킴\n${scheme}\n\n## 매체별 입력칸 (키=이름(제한))\n${tndChannelSpecText()}\n\n## 이전 T&D (구글 시트)\n${pastText || '(읽어온 데이터 없음)'}`;
+  const userText = `## 메인 SKU\n${skuName || '(선택 안 함)'}\n\n## 행사 스킴\n${scheme}\n\n## 매체별 입력칸 (키=이름(제한))\n${tndChannelSpecText()}\n\n## 이전 T&D (구글 시트)\n${pastText || '(읽어온 데이터 없음)'}`;
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
@@ -3612,8 +3654,27 @@ new MutationObserver(()=>{ if(!tndApplying) applyTndPlaceholders(); })
   const runBtn = document.getElementById('schemeRunBtn');
   const clearBtn = document.getElementById('schemeClearBtn');
   const setStatus = (t, err)=>{ status.textContent = t; status.style.color = err ? 'var(--red)' : 'var(--text-soft)'; };
+  const chips = document.getElementById('skuChips');
+  let selectedSku = localStorage.getItem('tnd_sku') || '';
+  const renderChips = ()=>{
+    chips.innerHTML = '';
+    TND_SKUS.forEach(s=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sku-chip' + (s.name === selectedSku ? ' on' : '');
+      b.textContent = s.name;
+      b.addEventListener('click', ()=>{
+        selectedSku = (selectedSku === s.name) ? '' : s.name;
+        localStorage.setItem('tnd_sku', selectedSku);
+        renderChips();
+      });
+      chips.appendChild(b);
+    });
+  };
+  renderChips();
   document.getElementById('schemeBtn').addEventListener('click', ()=>{
     ta.value = localStorage.getItem('tnd_scheme') || '';
+    renderChips();
     setStatus(tndSuggestions ? `현재 적용 중인 추천: ${tndSuggestions.eventName || '(행사명 없음)'}` : '');
     modal.style.display = 'flex';
   });
@@ -3621,16 +3682,17 @@ new MutationObserver(()=>{ if(!tndApplying) applyTndPlaceholders(); })
   modal.addEventListener('click', e=>{ if(e.target === modal) modal.style.display = 'none'; });
   runBtn.addEventListener('click', async ()=>{
     const scheme = ta.value.trim();
+    if(!selectedSku){ setStatus('메인 SKU를 먼저 골라줘.', true); return; }
     if(!scheme){ setStatus('스킴을 입력해줘.', true); return; }
     localStorage.setItem('tnd_scheme', scheme);
     runBtn.disabled = true;
     try{
-      setStatus('구글 시트에서 이전 T&D 읽는 중...');
+      setStatus(`구글 시트에서 이전 T&D 읽는 중... (${selectedSku} 우선)`);
       let past = '';
-      try{ past = await readPastTndFromSheet(); }
+      try{ past = await readPastTndFromSheet(selectedSku); }
       catch(e){ setStatus('이전 T&D를 못 읽어서 스킴만으로 추천할게... (' + (e.message || e) + ')', true); }
-      setStatus('전체 매체 T&D 추천 만드는 중... (10~30초)');
-      tndSuggestions = await generateTndSuggestions(scheme, past);
+      setStatus(`${selectedSku} 기준으로 전체 매체 T&D 추천 만드는 중... (10~30초)`);
+      tndSuggestions = await generateTndSuggestions(scheme, past, selectedSku);
       localStorage.setItem('tnd_suggestions', JSON.stringify(tndSuggestions));
       applyTndPlaceholders();
       setStatus('✓ 추천 완료 — 모든 매체 입력칸에 회색 글씨로 들어갔어.');
